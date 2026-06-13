@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" viewBox="-4 -4.5 61.793579 61.793579" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="blur-yellow" x="2.49348" y="-26.542299" width="69.089897" height="61.252499" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="3.89034"/>
+    </filter>
+    <filter id="blur-red-large" x="28.752399" y="-32.033298" width="135.47701" height="134.313" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="18.8078"/>
+    </filter>
+    <filter id="blur-green" x="-62.288399" y="-21.925301" width="142.63699" height="127.18" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="15.9884"/>
+    </filter>
+    <filter id="blur-green-small" x="-52.569698" y="-20.8346" width="127.582" height="127.452" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="15.9884"/>
+    </filter>
+    <filter id="blur-blue-bottom" x="17.3619" y="45.4646" width="116.786" height="118.715" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="15.1937"/>
+    </filter>
+    <filter id="blur-yellow-top" x="-7.44765" y="-60.473701" width="125.303" height="122.858" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="13.7698"/>
+    </filter>
+    <filter id="blur-blue" x="-27.708599" y="13.3597" width="157.119" height="162.02901" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="12.297"/>
+    </filter>
+    <filter id="blur-blue-small" x="50.463799" y="16.981001" width="87.397301" height="83.773804" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="11.0036"/>
+    </filter>
+    <filter id="blur-red" x="34.260399" y="-28.457001" width="116.701" height="104.506" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="9.29385"/>
+    </filter>
+    <filter id="blur-yellow-small" x="-15.1522" y="-15.9493" width="77.294098" height="91.075996" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="11.5027"/>
+    </filter>
+    <clipPath id="icon-clip">
+      <path d="M89.699204 93.694987C94.365903 97.195016 101.366 94.861698 94.949201 88.44499 75.699203 69.77829 79.782499 18.444981 55.8659 18.444981c-23.916701 0-19.833401 51.333309-39.083399 70.000009-6.9999897 6.999996.583299 8.750026 5.249998 5.249997C40.115902 81.444995 38.949199 59.861699 55.8659 59.861699c16.916603 0 15.749999 21.583296 33.833304 33.833288z"/>
+    </clipPath>
+  </defs>
+  <g transform="translate(153.99875 -167.7638)">
+    <path d="m-105.26502 216.1732c3.00216 2.25163 7.505419.75057 3.3774-3.37739-12.3838-12.00856-9.75696-45.032-25.14285-45.032-15.38595 0-12.75911 33.02344-25.14291 45.032-4.50319 4.50319.37525 5.62902 3.3774 3.37739 11.63331-7.88059 10.88276-21.76543 21.76551-21.76543 10.88269 0 10.1322 13.88484 21.76545 21.76543z" fill="#3186ff"/>
+    <g transform="matrix(.64331429 0 0 .64331429 -162.9698 155.89788)" clip-path="url(#icon-clip)">
+      <g filter="url(#blur-yellow)"><ellipse cx="22.7873" cy="26.809799" rx="22.7873" ry="26.809799" transform="matrix(-.112784 .99362 -.99362 -.112781 66.2473 -15.5344)" fill="#ffe432"/></g>
+      <g filter="url(#blur-red-large)"><ellipse cx="96.490997" cy="35.1231" rx="29.5007" ry="30.1492" transform="rotate(76.9243 96.491 35.1231)" fill="#fc413d"/></g>
+      <g filter="url(#blur-green)"><ellipse cx="9.0298796" cy="41.6647" rx="30.832001" ry="39.9417" transform="rotate(74.1257 9.02988 41.6647)" fill="#00b95c"/></g>
+      <g filter="url(#blur-green-small)"><ellipse cx="11.2212" cy="42.891499" rx="30.219999" ry="33.269501" transform="rotate(45.6065 11.2212 42.8915)" fill="#00b95c"/></g>
+      <g filter="url(#blur-blue-bottom)"><ellipse cx="75.754601" cy="104.822" rx="29.0177" ry="27.943001" transform="rotate(76.9243 75.7546 104.822)" fill="#3186ff"/></g>
+      <g filter="url(#blur-yellow-top)"><ellipse cx="33.566101" cy="35.404301" rx="33.566101" ry="35.404301" transform="matrix(-.409539 .912293 -.912294 -.409537 101.25 -15.1674)" fill="#fbbc04"/></g>
+      <g filter="url(#blur-blue)"><path d="M2.56802 149.695C-15.8116 142.48 15.5987 83.1163 23.4093 63.2203 31.22 43.3244 52.4514 33.0447 70.831 40.26c18.3797 7.2153 40.165 46.9562 32.354 66.852-7.8108 19.896-82.2373 49.798-100.61698 42.583z" fill="#3186ff"/></g>
+      <g filter="url(#blur-blue-small)"><path d="M113.934 75.8079C109.013 81.5509 96.1724 78.6224 85.253 69.2667 74.3335 59.911 69.4704 47.6711 74.391 41.928c4.9206-5.743 17.7615-2.8144 28.681 6.5412 10.919 9.3557 15.783 21.5956 10.862 27.3387z" fill="#749bff"/></g>
+      <g filter="url(#blur-red)"><ellipse cx="92.611" cy="23.7962" rx="44.2411" ry="27.5016" transform="rotate(34.0763 92.611 23.7962)" fill="#fc413d"/></g>
+      <g filter="url(#blur-yellow-small)"><ellipse cx="23.4949" cy="29.588699" rx="23.7071" ry="13.7869" transform="rotate(112.516 23.4949 29.5887)" fill="#ffee48"/></g>
+    </g>
+  </g>
+</svg>

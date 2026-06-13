@@ -1,7 +1,7 @@
 import OpenButton from './OpenButton.svelte';
 import { Popup } from './popup';
 export class UI {
-    private readonly OPEN_BUTTON_ID = 'risu-gca-openbutton';
+    private readonly OPEN_BUTTON_ID = 'risu-antigravity-openbutton';
     private readonly TARGET_SELECTOR = 'div.rs-setting-cont-3';
 
     private openButtonComponent: OpenButton | null = null;
@@ -18,7 +18,7 @@ export class UI {
 
     addPopup() {
         this.popupContainer = document.createElement('div');
-        this.popupContainer.id = 'risu-gca-container';
+        this.popupContainer.id = 'risu-antigravity-container';
         document.body.appendChild(this.popupContainer);
         this.popupComponent = new Popup({
             target: this.popupContainer,

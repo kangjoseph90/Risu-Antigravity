@@ -36,7 +36,7 @@ export class ModelManager {
 
     static getConfig(type: RequestType): { model_id: string; parameters: ModelParameters } {
         if (!this.config[type]) {
-            this.config[type] = { model_id: "gemini-3-flash-preview", parameters: {} as ModelParameters };
+            this.config[type] = { model_id: "gemini-3-flash", parameters: {} as ModelParameters };
             this.debouncedSave();
         }
         return this.config[type]

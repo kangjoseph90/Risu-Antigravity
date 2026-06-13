@@ -12,6 +12,7 @@ export {
     SERVICE_TIER,
     OPT_OUT,
     MODEL_CONFIG,
+    CREDIT_OVERAGE,
 };
 
 enum RisuArgType {
@@ -24,8 +25,8 @@ interface RisuArgs {
 }
 
 // Plugin Info
-const PLUGIN_TITLE = 'risu-gca'
-const PLUGIN_VERSION = 'v0.2.2'
+const PLUGIN_TITLE = 'risu-antigravity'
+const PLUGIN_VERSION = 'v1.0.0'
 const PLUGIN_NAME = `${PLUGIN_TITLE}-${PLUGIN_VERSION}`
 
 // Argument Name Definitions
@@ -37,6 +38,7 @@ const PROJECT_ID = 'project_id'
 const SERVICE_TIER = 'service_tier'
 const OPT_OUT = 'opt_out'
 const MODEL_CONFIG = 'model_config'
+const CREDIT_OVERAGE = 'credit_overage'
 
 // Plugin Arguments Definition
 const RISU_ARGS: RisuArgs = {
@@ -48,6 +50,7 @@ const RISU_ARGS: RisuArgs = {
     [SERVICE_TIER]: RisuArgType.String,
     [OPT_OUT]: RisuArgType.Int,
     [MODEL_CONFIG]: RisuArgType.String,
+    [CREDIT_OVERAGE]: RisuArgType.Int,
 }
 
 

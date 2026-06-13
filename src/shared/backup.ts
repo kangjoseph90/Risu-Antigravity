@@ -61,7 +61,7 @@ export class BackupManager {
             const backupData = await this.gatherData();
             const jsonString = JSON.stringify(backupData, null, 2);
             const date = new Date().toISOString().split('T')[0];
-            downloadFile(jsonString, `risu-usage-tracker-backup-${date}.json`, 'application/json');
+            downloadFile(jsonString, `risu-antigravity-backup-${date}.json`, 'application/json');
             return true;
         } catch (e) {
             Logger.error('Export failed:', e);

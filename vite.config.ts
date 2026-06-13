@@ -16,8 +16,8 @@ export default defineConfig({
   build: {
     lib: {
       entry: 'src/main.ts', // Plugin entry file
-      name: 'risu-gca', // Plugin name
-      fileName: () => 'risu-gca.js', // Output file name
+      name: 'risu-antigravity', // Plugin name
+      fileName: () => 'risu-antigravity.js', // Output file name
       formats: ['umd']
     },
     rollupOptions: {

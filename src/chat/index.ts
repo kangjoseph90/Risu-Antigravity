@@ -1,11 +1,9 @@
 import type { PluginV2ProviderArgument, PluginV2ProviderResult } from "../api";
 import { Logger } from "../shared/logger";
-import { GCAManager } from "../gca";
 import { ModelManager } from "../model";
 import { RequestType } from "../shared/types";
 import { parseRequestType } from "../shared/util";
 import { applyPluginParams, getGenerationConfig, getPluginParams, getSafetySettings } from "./config";
-import { parse } from "svelte/compiler";
 import { parseGeminiChat } from "./format";
 import { requestGenerateContent, requestGenerateStreamContent } from "./request";
 import { handleResponse, handleStreamResponse } from "./response";
@@ -40,15 +38,27 @@ export async function handleRequest(args: PluginV2ProviderArgument, abortSignal?
         tools.push({ code_execution: {} });
     }
 
+    const generateUUID = () => {
+        try {
+            if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+                return crypto.randomUUID();
+            }
+        } catch (e) {}
+        return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    };
+
     const body = {
         model: model,
+        requestType: 'agent',
+        requestId: 'agent-' + generateUUID(),
+        userAgent: 'antigravity',
         request: {
             contents: contents,
             generationConfig: generationConfig,
             safetySettings: safetySettings,
-            tools
+            tools,
         }
-    }
+    };
 
     if (stream) {
         const res = await requestGenerateStreamContent(body, abortSignal);

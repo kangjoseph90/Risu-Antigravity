@@ -1,9 +1,9 @@
 {
-  "name": "risu-gca",
-  "version": "0.2.2",
-  "description": "RisuAI Plugin using Svelte, TypeScript, and Tailwind CSS",
+  "name": "risu-antigravity",
+  "version": "1.0.0",
+  "description": "Use Google Antigravity as an LLM provider in RisuAI",
   "type": "module",
-  "main": "dist/risu-gca.js",
+  "main": "dist/risu-antigravity.js",
   "scripts": {
     "build": "vite build"
   },

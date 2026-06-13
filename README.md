@@ -1,12 +1,12 @@
-# Risu GCA (Gemini Code Assist)
+# Risu Antigravity
 
-This plugin integrates **Gemini Code Assist** as a chat completion provider within RisuAI. It allows you to use Gemini models directly in your chats.
+This plugin integrates **Google Antigravity** as a chat completion provider within RisuAI. It provides access to the models available through Antigravity directly in your chats.
 
 ## Features
 
-### Gemini Code Assist Provider
+### Google Antigravity Provider
 
--   **Seamless Integration**: Adds "Gemini Code Assist" to the list of available providers in RisuAI.
+-   **Seamless Integration**: Adds "[Google] Antigravity" to the list of available providers in RisuAI.
 
 ### Authentication & Security
 
@@ -15,7 +15,7 @@ This plugin integrates **Gemini Code Assist** as a chat completion provider with
 
 ### Model Management
 
--   **Model Selection**: Choose from available Gemini models.
+-   **Model Selection**: Choose from available Antigravity models.
 -   **Configuration**: Customize model parameters to suit your needs.
 
 ### User Interface
@@ -39,11 +39,11 @@ npm install
 npm run build
 ```
 
-This will generate a `dist/risu-gca.js` file.
+This will generate a `dist/risu-antigravity.js` file.
 
 ### 3. Import to RisuAI
 
-Import the generated `dist/risu-gca.js` file into RisuAI as a plugin.
+Import the generated `dist/risu-antigravity.js` file into RisuAI as a plugin.
 
 ---
 

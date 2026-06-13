@@ -1,8 +1,8 @@
 import type { GlobalFetchResult } from "../api";
-import { GCAManager } from "../gca";
+import { AntigravityManager } from "../antigravity";
 
 export async function requestGenerateContent(body: any, abortSignal?: AbortSignal): Promise<GlobalFetchResult> {
-    return GCAManager.risuFetchGCA('generateContent', {
+    return AntigravityManager.risuFetchAntigravity('generateContent', {
         method: 'POST',
         body: body,
         headers: { 'Content-Type': 'application/json' },
@@ -11,7 +11,7 @@ export async function requestGenerateContent(body: any, abortSignal?: AbortSigna
 }
 
 export async function requestGenerateStreamContent(body: any, abortSignal?: AbortSignal): Promise<Response> {
-    return GCAManager.nativeFetchGCA('streamGenerateContent?alt=sse', {
+    return AntigravityManager.nativeFetchAntigravity('streamGenerateContent?alt=sse', {
         method: 'POST',
         body: JSON.stringify(body),
         headers: { 'Content-Type': 'application/json' },

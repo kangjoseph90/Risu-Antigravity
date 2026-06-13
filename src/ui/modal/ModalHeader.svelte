@@ -1,5 +1,6 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
+    import antigravityLogo from "../../assets/antigravity-logo.svg";
 
     export let isLoggedIn: boolean = false;
     export let userProfile: { name: string; picture: string; email: string } | null = null;
@@ -46,24 +47,12 @@
 >
     <div class="flex items-center gap-4">
         <div class="p-2 bg-blue-500/10 rounded-lg shrink-0">
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-6 w-6 text-blue-400"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-            >
-                <path
-                    d="M20.616 10.835a14.147 14.147 0 01-4.45-3.001 14.111 14.111 0 01-3.678-6.452.503.503 0 00-.975 0 14.134 14.134 0 01-3.679 6.452 14.155 14.155 0 01-4.45 3.001c-.65.28-1.318.505-2.002.678a.502.502 0 000 .975c.684.172 1.35.397 2.002.677a14.147 14.147 0 014.45 3.001 14.112 14.112 0 013.679 6.453.502.502 0 00.975 0c.172-.685.397-1.351.677-2.003a14.145 14.145 0 013.001-4.45 14.113 14.113 0 016.453-3.678.503.503 0 000-.975 13.245 13.245 0 01-2.003-.678z"
-                />
-            </svg>
+            <img src={antigravityLogo} alt="" class="h-6 w-6" />
         </div>
         <div>
             <h2 class="text-lg font-bold text-zinc-100 tracking-tight">
-                Risu-GCA
+                Risu Antigravity
             </h2>
-            <p class="text-xs text-zinc-500 font-medium">
-                Gemini Code Assist Integration
-            </p>
         </div>
     </div>
 
@@ -243,6 +232,19 @@
                             {/if}
                         </div>
                         <div class="border-t border-zinc-700/50 mt-2 py-2 px-2">
+                            <button
+                                class="w-full text-left px-3 py-2 text-sm text-zinc-300 hover:bg-purple-500/10 hover:text-purple-300 rounded-lg transition-colors flex items-center gap-2"
+                                on:click={() => {
+                                    dispatch("quota");
+                                    showProfileDropdown = false;
+                                }}
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                </svg>
+                                Usage & Quota
+                            </button>
                             <button
                                 class="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-lg transition-colors flex items-center gap-2"
                                 on:click={() => dispatch("logout")}

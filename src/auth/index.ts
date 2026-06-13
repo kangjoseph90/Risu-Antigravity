@@ -10,17 +10,78 @@ import {
 import { RisuAPI } from "../api";
 import { Logger } from "../shared/logger";
 import { prompt } from "../ui/popup";
-import { GCAManager } from "../gca";
 import { eventEmitter, AppEvent } from "../shared/events";
 
 const CLIENT_ID =
-  '681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com';
-const CLIENT_SECRET = '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';
+  '1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com';
+const CLIENT_SECRET = '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';
 const SCOPES = [
   'https://www.googleapis.com/auth/cloud-platform',
   'https://www.googleapis.com/auth/userinfo.email',
   'https://www.googleapis.com/auth/userinfo.profile',
+  'https://www.googleapis.com/auth/cclog',
+  'https://www.googleapis.com/auth/experimentsandconfigs',
 ].join(' ');
+
+function base64UrlEncode(array: Uint8Array): string {
+    let binary = '';
+    const len = array.byteLength;
+    for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(array[i]);
+    }
+    return btoa(binary)
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=/g, '');
+}
+
+function getCrypto(): any {
+    if (typeof window !== 'undefined' && window.crypto) {
+        return window.crypto;
+    }
+    if (typeof globalThis !== 'undefined' && globalThis.crypto) {
+        return globalThis.crypto;
+    }
+    if (typeof crypto !== 'undefined') {
+        return crypto;
+    }
+    return null;
+}
+
+function getRandomValues(array: Uint8Array): Uint8Array {
+    const c = getCrypto();
+    if (c && typeof c.getRandomValues === 'function') {
+        c.getRandomValues(array);
+    } else {
+        for (let i = 0; i < array.length; i++) {
+            array[i] = Math.floor(Math.random() * 256);
+        }
+    }
+    return array;
+}
+
+function generateCodeVerifier(): string {
+    const array = new Uint8Array(32);
+    getRandomValues(array);
+    return base64UrlEncode(array);
+}
+
+async function generateCodeChallenge(verifier: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(verifier);
+    const c = getCrypto();
+    if (c && c.subtle && typeof c.subtle.digest === 'function') {
+        const hashBuffer = await c.subtle.digest('SHA-256', data);
+        return base64UrlEncode(new Uint8Array(hashBuffer));
+    }
+    throw new Error('Web Crypto Subtle digest (SHA-256) is not supported in this environment.');
+}
+
+function generateState(): string {
+    const array = new Uint8Array(16);
+    getRandomValues(array);
+    return base64UrlEncode(array);
+}
 
 export class AuthManager {
     private static userProfileCache: any = null;
@@ -64,21 +125,29 @@ export class AuthManager {
     }
 
     static async login(): Promise<string> {
+        const verifier = generateCodeVerifier();
+        const challenge = await generateCodeChallenge(verifier);
+        const state = generateState();
+
         return new Promise((resolve, reject) => {
             // Use localhost redirect which is allowed for Native clients
             const redirectUri = 'http://localhost:3000/oauth2callback';
-            const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(SCOPES)}&access_type=offline&prompt=consent`;
+            const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(SCOPES)}&access_type=offline&prompt=consent&code_challenge=${challenge}&code_challenge_method=S256&state=${state}`;
             try {
                 const width = 600;
                 const height = 600;
-                const left = window.screen.width / 2 - width / 2;
-                const top = window.screen.height / 2 - height / 2;
+                const screenWidth = (typeof window !== 'undefined' && window.screen) ? window.screen.width : 1920;
+                const screenHeight = (typeof window !== 'undefined' && window.screen) ? window.screen.height : 1080;
+                const left = screenWidth / 2 - width / 2;
+                const top = screenHeight / 2 - height / 2;
                 
-                window.open(
-                    authUrl,
-                    'google_auth',
-                    `width=${width},height=${height},top=${top},left=${left}`
-                );
+                if (typeof window !== 'undefined' && typeof window.open === 'function') {
+                    window.open(
+                        authUrl,
+                        'google_auth',
+                        `width=${width},height=${height},top=${top},left=${left}`
+                    );
+                }
             } catch (e) {
                 Logger.error('Failed to open auth window', e);
             }
@@ -108,7 +177,7 @@ If the window did not open, please copy the URL below and open it in your browse
                         
                         if (code && code.length > 10) {
                             // We must use the SAME redirect_uri for exchange
-                            AuthManager.exchangeCodeForToken(code, redirectUri)
+                            AuthManager.exchangeCodeForToken(code, redirectUri, verifier)
                                 .then(tokens => resolve(tokens.access_token))
                                 .catch(e => reject(e));
                         } else {
@@ -125,13 +194,14 @@ If the window did not open, please copy the URL below and open it in your browse
         });
     }
 
-    private static async exchangeCodeForToken(code: string, redirectUri: string): Promise<any> {
+    private static async exchangeCodeForToken(code: string, redirectUri: string, codeVerifier: string): Promise<any> {
         const params = new URLSearchParams();
         params.append('code', code);
         params.append('client_id', CLIENT_ID);
         params.append('client_secret', CLIENT_SECRET);
         params.append('redirect_uri', redirectUri);
         params.append('grant_type', 'authorization_code');
+        params.append('code_verifier', codeVerifier);
 
         const response = await fetch('https://oauth2.googleapis.com/token', {
             method: 'POST',

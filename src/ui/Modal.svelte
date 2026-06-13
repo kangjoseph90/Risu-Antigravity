@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { AuthManager } from "../auth";
-    import { GCAManager } from "../gca";
+    import { AntigravityManager } from "../antigravity";
     import { ModelManager } from "../model";
     import { RequestType, type ModelParameters } from "../shared/types";
     import { BackupManager } from "../shared/backup";
@@ -11,6 +11,7 @@
     import ModalHeader from "./modal/ModalHeader.svelte";
     import RequestTypeSidebar from "./modal/RequestTypeSidebar.svelte";
     import ModelSettings from "./modal/ModelSettings.svelte";
+    import QuotaView from "./modal/QuotaView.svelte";
 
     export let onClose: () => void;
 
@@ -22,6 +23,7 @@
     let optOut = false;
 
     let activeTab: RequestType = RequestType.Chat;
+    let activeView: "settings" | "quota" = "settings";
 
     // Local state for the current tab's config to bind to inputs
     let currentModelId = "";
@@ -46,15 +48,15 @@
             try {
                 userProfile = await AuthManager.fetchUserProfile();
 
-                // Initialize GCA to get project ID and tier
+                // Initialize Antigravity to get project ID and tier
                 try {
-                    await GCAManager.ensureInitialized();
-                    const gcaInfo = GCAManager.getCachedInfo();
-                    projectId = gcaInfo.projectId || "";
-                    serviceTier = gcaInfo.serviceTier || "";
-                    optOut = gcaInfo.optOut || false;
+                    await AntigravityManager.ensureInitialized();
+                    const antigravityInfo = AntigravityManager.getCachedInfo();
+                    projectId = antigravityInfo.projectId || "";
+                    serviceTier = antigravityInfo.serviceTier || "";
+                    optOut = antigravityInfo.optOut || false;
                 } catch (e) {
-                    Logger.error("Failed to initialize GCA:", e);
+                    Logger.error("Failed to initialize Antigravity:", e);
                 }
             } catch (e) {
                 Logger.error("Error checking login status:", e);
@@ -78,6 +80,11 @@
         userProfile = null;
         projectId = "";
         serviceTier = "";
+        activeView = "settings";
+    }
+
+    function handleQuota() {
+        activeView = "quota";
     }
 
     function loadModelConfig(type: RequestType) {
@@ -112,6 +119,7 @@
         const type = event.detail;
         saveCurrentConfig(); // Save previous tab
         activeTab = type;
+        activeView = "settings";
         loadModelConfig(type);
     }
 
@@ -183,6 +191,7 @@
             on:close={onClose}
             on:login={handleLogin}
             on:logout={handleLogout}
+            on:quota={handleQuota}
             on:quickBackup={handleQuickBackup}
             on:quickRestore={handleQuickRestore}
             on:export={handleExport}
@@ -191,21 +200,28 @@
 
         <!-- Body -->
         <div class="flex flex-col md:flex-row flex-1 overflow-hidden">
-            <RequestTypeSidebar
-                {requestTypes}
-                {activeTab}
-                on:tabChange={handleTabChange}
-            />
-
-            <!-- Content -->
-            <div class="flex-1 overflow-y-auto bg-[#1e1e20]">
-                <ModelSettings
-                    bind:currentModelId
-                    bind:currentParams
-                    bind:thinkingMode
-                    on:saveConfig={saveCurrentConfig}
+            {#if activeView === "quota"}
+                <!-- Quota View (full width, no sidebar) -->
+                <div class="flex-1 overflow-y-auto bg-[#1e1e20]">
+                    <QuotaView on:back={() => activeView = "settings"} />
+                </div>
+            {:else}
+                <RequestTypeSidebar
+                    {requestTypes}
+                    {activeTab}
+                    on:tabChange={handleTabChange}
                 />
-            </div>
+
+                <!-- Content -->
+                <div class="flex-1 overflow-y-auto bg-[#1e1e20]">
+                    <ModelSettings
+                        bind:currentModelId
+                        bind:currentParams
+                        bind:thinkingMode
+                        on:saveConfig={saveCurrentConfig}
+                    />
+                </div>
+            {/if}
         </div>
     </div>
 </div>
