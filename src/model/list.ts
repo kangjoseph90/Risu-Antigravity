@@ -5,6 +5,9 @@ export interface Model {
 
 export const MODELS: Model[] = [
   // Gemini Flash (newest → oldest, High → Low)
+  { id: "gemini-3.8-flash-high", displayName: "Gemini 3.8 Flash (High)" },
+  { id: "gemini-3.8-flash-medium", displayName: "Gemini 3.8 Flash (Medium)" },
+  { id: "gemini-3.8-flash-low", displayName: "Gemini 3.8 Flash (Low)" },
   { id: "gemini-3.7-flash-high", displayName: "Gemini 3.7 Flash (High)" },
   { id: "gemini-3.7-flash-medium", displayName: "Gemini 3.7 Flash (Medium)" },
   { id: "gemini-3.7-flash-low", displayName: "Gemini 3.7 Flash (Low)" },
