@@ -3,7 +3,7 @@
     import { AuthManager } from "../auth";
     import { AntigravityManager } from "../antigravity";
     import { ModelManager } from "../model";
-    import { RequestType, type ModelParameters } from "../shared/types";
+    import { RequestType, type ModelParameters, type ReasoningLevel } from "../shared/types";
     import { BackupManager } from "../shared/backup";
     import { Logger } from "../shared/logger";
     import { alert, confirm } from "./popup";
@@ -27,11 +27,9 @@
 
     // Local state for the current tab's config to bind to inputs
     let currentModelId = "";
+    let currentReasoningLevel: ReasoningLevel | undefined;
     let currentParams: ModelParameters = {};
     let modalHeader: ModalHeader;
-
-    // Thinking mode state
-    let thinkingMode: "level" | "tokens" = "level";
 
     const requestTypes = Object.values(RequestType).filter(
         (t) => t !== RequestType.Unknown
@@ -90,28 +88,15 @@
     function loadModelConfig(type: RequestType) {
         const config = ModelManager.getConfig(type);
         currentModelId = config.model_id;
+        currentReasoningLevel = config.reasoning_level;
         currentParams = { ...config.parameters };
-
-        // Determine thinking mode
-        if (currentParams.thinking_tokens !== undefined) {
-            thinkingMode = "tokens";
-        } else {
-            thinkingMode = "level";
-        }
     }
 
     function saveCurrentConfig() {
-        // Clean up thinking params based on mode
-        const paramsToSave = { ...currentParams };
-        if (thinkingMode === "level") {
-            delete paramsToSave.thinking_tokens;
-        } else {
-            delete paramsToSave.thinking_level;
-        }
-
         ModelManager.setConfig(activeTab, {
             model_id: currentModelId,
-            parameters: paramsToSave,
+            reasoning_level: currentReasoningLevel,
+            parameters: { ...currentParams },
         });
     }
 
@@ -217,7 +202,7 @@
                     <ModelSettings
                         bind:currentModelId
                         bind:currentParams
-                        bind:thinkingMode
+                        bind:currentReasoningLevel
                         on:saveConfig={saveCurrentConfig}
                     />
                 </div>

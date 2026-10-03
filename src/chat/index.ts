@@ -1,6 +1,7 @@
 import type { PluginV2ProviderArgument, PluginV2ProviderResult } from "../api";
 import { Logger } from "../shared/logger";
 import { ModelManager } from "../model";
+import { getRequestModelId } from "../model/list";
 import { RequestType } from "../shared/types";
 import { parseRequestType } from "../shared/util";
 import { applyPluginParams, getGenerationConfig, getPluginParams, getSafetySettings } from "./config";
@@ -12,7 +13,7 @@ export async function handleRequest(args: PluginV2ProviderArgument, abortSignal?
     const requestType = parseRequestType(args.mode);
     const config = ModelManager.getConfig(requestType);
 
-    const model = config.model_id;
+    const model = getRequestModelId(config.model_id, config.reasoning_level);
     const params = config.parameters;
     const pluginParams = getPluginParams(args);
     const newParams = applyPluginParams(params, pluginParams);

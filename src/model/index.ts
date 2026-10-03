@@ -2,15 +2,12 @@
 import { RisuAPI } from '../api';
 import { MODEL_CONFIG } from '../plugin';
 import { AppEvent, eventEmitter } from '../shared/events';
-import { RequestType, type ModelParameters } from '../shared/types';
+import { RequestType } from '../shared/types';
 import { debounce } from '../shared/util';
+import { DEFAULT_MODEL_ID } from './list';
+import { normalizeModelConfig, type ModelConfiguration } from './config';
 
-type ModelConfig = {
-    [K in RequestType]?: {
-        model_id: string;
-        parameters: ModelParameters;
-    };
-};
+type ModelConfig = Partial<Record<RequestType, ModelConfiguration>>;
 
 export class ModelManager {
     private static config: ModelConfig = {};
@@ -28,22 +25,28 @@ export class ModelManager {
         try {
             const storedMap = RisuAPI.getArg(MODEL_CONFIG) as string;
             this.config = storedMap ? JSON.parse(storedMap) : {};
+            const before = JSON.stringify(this.config);
+            for (const type of Object.values(RequestType)) {
+                const config = this.config[type];
+                if (config) this.config[type] = normalizeModelConfig(config);
+            }
+            if (before !== JSON.stringify(this.config)) this.debouncedSave();
         } catch (e) {
             this.config = {};
             this.debouncedSave();
         }
     }
 
-    static getConfig(type: RequestType): { model_id: string; parameters: ModelParameters } {
+    static getConfig(type: RequestType): ModelConfiguration {
         if (!this.config[type]) {
-            this.config[type] = { model_id: "gemini-3.7-flash-high", parameters: {} as ModelParameters };
+            this.config[type] = normalizeModelConfig({ model_id: DEFAULT_MODEL_ID, parameters: {} });
             this.debouncedSave();
         }
-        return this.config[type]
+        return this.config[type]!
     }
 
-    static setConfig(type: RequestType, { model_id, parameters }: { model_id: string; parameters: ModelParameters }) {
-        this.config[type] = { model_id, parameters };
+    static setConfig(type: RequestType, config: ModelConfiguration) {
+        this.config[type] = normalizeModelConfig(config);
         this.debouncedSave();
     }
 

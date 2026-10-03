@@ -5,7 +5,8 @@
   "type": "module",
   "main": "dist/risu-antigravity.js",
   "scripts": {
-    "build": "vite build"
+    "build": "vite build",
+    "test": "node --import tsx --test tests/model.test.ts"
   },
   "dependencies": {
     "lucide-svelte": "^0.548.0",
