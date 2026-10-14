@@ -4,15 +4,15 @@ import { MODELS, getReasoningLevels, getRequestModelId, getVisibleModels, normal
 import { normalizeModelConfig } from '../src/model/config';
 import { getGenerationConfig } from '../src/chat/config';
 
-test('latest model list contains four families without reasoning suffixes', () => {
+test('latest model list contains Argon and existing families without reasoning suffixes', () => {
   assert.deepEqual(getVisibleModels(false, '').map((model) => model.id), [
-    'gemini-3.8-flash', 'gemini-3.1-pro', 'claude-opus-5-5', 'claude-sonnet-5-5',
+    'gemini-4-argon', 'gemini-3.8-flash', 'gemini-3.1-pro', 'claude-opus-5-5', 'claude-sonnet-5-5',
   ]);
   assert.equal(getVisibleModels(true, '').length, MODELS.length);
 });
 
 test('supported levels and request IDs are specific to each model', () => {
-  for (const model of ['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.6-flash', 'claude-opus-5-5', 'claude-sonnet-5-5']) {
+  for (const model of ['gemini-4-argon', 'gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.6-flash', 'claude-opus-5-5', 'claude-sonnet-5-5']) {
     assert.deepEqual(getReasoningLevels(model), ['low', 'medium', 'high']);
     for (const level of ['low', 'medium', 'high'] as const) {
       assert.equal(getRequestModelId(model, level), `${model}-${level}`);
@@ -34,6 +34,7 @@ test('older Flash aliases use their original level mapping', () => {
 
 test('migration preserves every old request ID and its encoded level', () => {
   const oldIds = [
+    'gemini-4-argon-high', 'gemini-4-argon-medium', 'gemini-4-argon-low',
     'gemini-3.8-flash-high', 'gemini-3.8-flash-medium', 'gemini-3.8-flash-low',
     'gemini-3.7-flash-high', 'gemini-3.7-flash-medium', 'gemini-3.7-flash-low',
     'gemini-3.6-flash-high', 'gemini-3.6-flash-medium', 'gemini-3.6-flash-low',
@@ -53,6 +54,7 @@ test('migration preserves every old request ID and its encoded level', () => {
 test('invalid or missing levels fall back to the highest supported level; fixed models have no level', () => {
   assert.deepEqual(normalizeModelSelection('gemini-3.1-pro', 'medium'), { model_id: 'gemini-3.1-pro', reasoning_level: 'high' });
   assert.deepEqual(normalizeModelSelection('gemini-3.8-flash'), { model_id: 'gemini-3.8-flash', reasoning_level: 'high' });
+  assert.deepEqual(normalizeModelSelection('gemini-4-argon'), { model_id: 'gemini-4-argon', reasoning_level: 'high' });
   assert.deepEqual(normalizeModelSelection('gpt-oss-120b', 'medium'), { model_id: 'gpt-oss-120b' });
   assert.equal(getRequestModelId('claude-opus-4-6'), 'claude-opus-4-6-thinking');
 });
@@ -67,7 +69,7 @@ test('legacy reasoning overrides are removed without losing other parameters', (
 });
 
 test('filtered lists preserve saved legacy and unknown IDs', () => {
-  assert.equal(getVisibleModels(false, 'gemini-3.7-flash').length, 5);
+  assert.equal(getVisibleModels(false, 'gemini-3.7-flash').length, 6);
   assert.equal(getVisibleModels(false, 'future-model').at(-1)?.id, 'future-model');
   assert.deepEqual(normalizeModelSelection('future-model', 'high'), { model_id: 'future-model' });
   assert.equal(getRequestModelId('future-model'), 'future-model');
