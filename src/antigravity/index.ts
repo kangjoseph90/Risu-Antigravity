@@ -4,7 +4,7 @@ import type { NativeFetchArgs, GlobalFetchArgs, GlobalFetchResult } from '../api
 import { PROJECT_ID, SERVICE_TIER, OPT_OUT, CREDIT_OVERAGE } from '../plugin';
 import { Logger } from '../shared/logger';
 import { eventEmitter, AppEvent } from '../shared/events';
-import { getGenerationUserAgent } from './client';
+import { CLI_USER_AGENT, getGenerationUserAgent } from './client';
 
 const ANTIGRAVITY_ENDPOINT = 'https://daily-cloudcode-pa.googleapis.com/v1internal';
 
@@ -155,7 +155,8 @@ export class AntigravityManager {
         const headers = {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
-            'User-Agent': 'antigravity/ide/2.5.5 (aidev_client; os_type=windows; arch=amd64)',
+            // The legacy IDE client omits the separate Pro Argon quota group.
+            'User-Agent': CLI_USER_AGENT,
         };
         const url = `${ANTIGRAVITY_ENDPOINT}:retrieveUserQuotaSummary`;
         const res = await RisuAPI.risuFetch(url, {
