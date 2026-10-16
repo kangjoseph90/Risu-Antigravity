@@ -1,7 +1,7 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
     import type { ModelParameters, ReasoningLevel } from "../../shared/types";
-    import { MODELS, getModel, getVisibleModels, getReasoningLevels, normalizeModelSelection } from "../../model/list";
+    import { MODELS, getVisibleModels, getReasoningLevels, normalizeModelSelection } from "../../model/list";
 
     export let currentModelId: string = "";
     export let currentParams: ModelParameters = {};
@@ -13,7 +13,6 @@
     $: visibleModels = getVisibleModels(showOlderModels, currentModelId);
     $: selectedOlderModel = MODELS.some((model) => model.id === currentModelId && !model.isLatest);
     $: reasoningLevels = getReasoningLevels(currentModelId);
-    $: availabilityNote = getModel(currentModelId)?.availabilityNote;
 
     function onModelChange() {
         currentReasoningLevel = normalizeModelSelection(currentModelId, currentReasoningLevel).reasoning_level;
@@ -109,9 +108,6 @@
                 <option value={model.id}>{model.displayName}</option>
             {/each}
         </select>
-        {#if availabilityNote}
-            <p class="text-xs text-amber-300" role="note">{availabilityNote}</p>
-        {/if}
         {#if !showOlderModels && selectedOlderModel}
             <p class="text-xs text-zinc-400">
                 Your saved older model is kept selected. Enable "Show older models" to see all models.

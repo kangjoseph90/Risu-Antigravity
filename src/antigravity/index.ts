@@ -4,6 +4,7 @@ import type { NativeFetchArgs, GlobalFetchArgs, GlobalFetchResult } from '../api
 import { PROJECT_ID, SERVICE_TIER, OPT_OUT, CREDIT_OVERAGE } from '../plugin';
 import { Logger } from '../shared/logger';
 import { eventEmitter, AppEvent } from '../shared/events';
+import { getGenerationUserAgent } from './client';
 
 const ANTIGRAVITY_ENDPOINT = 'https://daily-cloudcode-pa.googleapis.com/v1internal';
 
@@ -194,13 +195,14 @@ export class AntigravityManager {
         const token = await AuthManager.getAccessToken();
         const headers = { ...args.headers };
         headers['Authorization'] = `Bearer ${token}`;
-        headers['User-Agent'] = 'antigravity/ide/2.5.5 (aidev_client; os_type=windows; arch=amd64)';
+        headers['User-Agent'] = getGenerationUserAgent(undefined);
 
         let body = args.body;
 
         const projectId = await this.ensureInitialized();
         if (typeof body === 'string') {
             const parsed = JSON.parse(body);
+            headers['User-Agent'] = getGenerationUserAgent(parsed.model);
             parsed.project = projectId;
 
             // Inject enabledCreditTypes if credit overage is enabled
@@ -226,7 +228,7 @@ export class AntigravityManager {
         const token = await AuthManager.getAccessToken();
         const headers = { ...args.headers };
         headers['Authorization'] = `Bearer ${token}`;
-        headers['User-Agent'] = 'antigravity/ide/2.5.5 (aidev_client; os_type=windows; arch=amd64)';
+        headers['User-Agent'] = getGenerationUserAgent(args.body?.model);
 
         let body = args.body;
 

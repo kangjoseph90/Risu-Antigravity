@@ -24,7 +24,7 @@ You are responsible for complying with the applicable terms of service and usage
 ### Model Management
 
 -   **Model Selection**: Choose from available Antigravity models.
--   **Gemini 4 Argon**: Low, Medium, and High reasoning; requires Google AI Ultra or eligible Gemini Enterprise access.
+-   **Gemini 4 Argon**: Low, Medium, and High reasoning.
 -   **Configuration**: Customize model parameters to suit your needs.
 
 ### User Interface

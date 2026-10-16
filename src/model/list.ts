@@ -4,7 +4,6 @@ export type Model = {
   id: string;
   displayName: string;
   isLatest?: boolean;
-  availabilityNote?: string;
 } & (
   | { reasoningIds: Partial<Record<ReasoningLevel, string>>; requestId?: never }
   | { requestId: string; reasoningIds?: never }
@@ -22,7 +21,6 @@ export const MODELS: Model[] = [
   // IDs and labels confirmed in the official Antigravity CLI 1.3.5 binary.
   {
     id: 'gemini-4-argon', displayName: 'Gemini 4 Argon', isLatest: true,
-    availabilityNote: 'Requires Google AI Ultra or an eligible Gemini Enterprise subscription.',
     reasoningIds: { low: 'gemini-4-argon-low', medium: 'gemini-4-argon-medium', high: 'gemini-4-argon-high' },
   },
   // Gemini Flash (newest → oldest)

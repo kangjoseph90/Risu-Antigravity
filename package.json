@@ -1,12 +1,12 @@
 {
   "name": "risu-antigravity",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Use Google Antigravity as an LLM provider in RisuAI",
   "type": "module",
   "main": "dist/risu-antigravity.js",
   "scripts": {
     "build": "vite build",
-    "test": "node --import tsx --test tests/model.test.ts"
+    "test": "node --import tsx --test tests/model.test.ts tests/transport.test.ts"
   },
   "dependencies": {
     "lucide-svelte": "^0.548.0",
