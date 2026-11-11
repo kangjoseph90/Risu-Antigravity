@@ -1,7 +1,7 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
     import type { ModelParameters, ReasoningLevel } from "../../shared/types";
-    import { MODELS, getVisibleModels, getReasoningLevels, normalizeModelSelection } from "../../model/list";
+    import { MODELS, getVisibleModels, getReasoningLevels, normalizeModelSelection, supportsPenaltyParameters } from "../../model/list";
 
     export let currentModelId: string = "";
     export let currentParams: ModelParameters = {};
@@ -9,6 +9,7 @@
 
     const dispatch = createEventDispatcher();
     $: reasoningLevels = getReasoningLevels(currentModelId);
+    $: supportsPenalties = supportsPenaltyParameters(currentModelId);
     let showOlderModels = false;
     $: visibleModels = getVisibleModels(showOlderModels, currentModelId);
     $: selectedOlderModel = MODELS.some((model) => model.id === currentModelId && !model.isLatest);
@@ -294,6 +295,7 @@
         </div>
 
         <!-- Penalties -->
+        {#if supportsPenalties}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="space-y-2">
                 <label
@@ -326,6 +328,7 @@
                 />
             </div>
         </div>
+        {/if}
 
         <!-- Media Resolution -->
         <div class="space-y-2">

@@ -18,7 +18,7 @@ export async function handleRequest(args: PluginV2ProviderArgument, abortSignal?
     const stream = newParams.use_stream === true;
         
     const contents = parseGeminiChat(args.prompt_chat);
-    const generationConfig = getGenerationConfig(newParams);
+    const generationConfig = getGenerationConfig(newParams, model);
     const safetySettings = getSafetySettings();
     const activeTools = newParams.active_tools || [];
     const tools: any[] = [];

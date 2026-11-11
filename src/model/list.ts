@@ -4,6 +4,7 @@ export type Model = {
   id: string;
   displayName: string;
   isLatest?: boolean;
+  supportsPenalties?: boolean;
 } & (
   | { reasoningIds: Partial<Record<ReasoningLevel, string>>; requestId?: never }
   | { requestId: string; reasoningIds?: never }
@@ -20,12 +21,12 @@ export const REASONING_LEVELS: ReasoningLevel[] = ['low', 'medium', 'high'];
 export const MODELS: Model[] = [
   // IDs and labels confirmed in the official Antigravity CLI 1.3.5 binary.
   {
-    id: 'gemini-4-argon', displayName: 'Gemini 4 Argon', isLatest: true,
+    id: 'gemini-4-argon', displayName: 'Gemini 4 Argon', isLatest: true, supportsPenalties: false,
     reasoningIds: { low: 'gemini-4-argon-low', medium: 'gemini-4-argon-medium', high: 'gemini-4-argon-high' },
   },
   // Gemini Flash (newest → oldest)
   {
-    id: DEFAULT_MODEL_ID, displayName: 'Gemini 3.8 Flash', isLatest: true,
+    id: DEFAULT_MODEL_ID, displayName: 'Gemini 3.8 Flash', isLatest: true, supportsPenalties: false,
     reasoningIds: { low: 'gemini-3.8-flash-low', medium: 'gemini-3.8-flash-medium', high: 'gemini-3.8-flash-high' },
   },
   {
@@ -43,7 +44,7 @@ export const MODELS: Model[] = [
   { id: 'gemini-3-flash', displayName: 'Gemini 3 Flash', requestId: 'gemini-3-flash' },
   // Gemini Pro
   {
-    id: 'gemini-3.1-pro', displayName: 'Gemini 3.1 Pro', isLatest: true,
+    id: 'gemini-3.1-pro', displayName: 'Gemini 3.1 Pro', isLatest: false,
     reasoningIds: { low: 'gemini-3.1-pro-low', high: 'gemini-pro-agent' },
   },
   // Claude
@@ -58,7 +59,7 @@ export const MODELS: Model[] = [
   // Older models with a single known request ID do not expose a level selector.
   { id: 'claude-sonnet-4-6', displayName: 'Claude Sonnet 4.6', requestId: 'claude-sonnet-4-6' },
   { id: 'claude-opus-4-6', displayName: 'Claude Opus 4.6', requestId: 'claude-opus-4-6-thinking' },
-  { id: 'gpt-oss-120b', displayName: 'GPT-OSS 120B', requestId: 'gpt-oss-120b-medium' },
+  { id: 'gpt-oss-120b', displayName: 'GPT-OSS 120B', requestId: 'gpt-oss-120b-medium', isLatest: false },
 ];
 
 export function getModel(modelId: string): Model | undefined {
@@ -95,6 +96,10 @@ export function getRequestModelId(modelId: string, reasoningLevel?: ReasoningLev
   const model = getModel(selection.model_id);
   return (selection.reasoning_level && model?.reasoningIds?.[selection.reasoning_level])
     || model?.requestId || selection.model_id;
+}
+
+export function supportsPenaltyParameters(modelId: string): boolean {
+  return getModel(normalizeModelSelection(modelId).model_id)?.supportsPenalties !== false;
 }
 
 export function getVisibleModels(showOlderModels: boolean, currentModelId: string): Model[] {

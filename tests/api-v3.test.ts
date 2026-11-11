@@ -122,12 +122,12 @@ test('fixed providers route v3 requests to independent tabs and read changed set
         },
     };
     await ModelManager.init();
-    ModelManager.setConfig(RequestType.Chat, {model_id:'gemini-4-argon',reasoning_level:'low',parameters:{temperature:0,use_stream:false}});
+    ModelManager.setConfig(RequestType.Chat, {model_id:'gemini-4-argon',reasoning_level:'low',parameters:{temperature:0,use_stream:false,frequency_penalty:0.7,presence_penalty:0.8}});
     ModelManager.setConfig(RequestType.Memory, {model_id:'gemini-3.8-flash',reasoning_level:'low',parameters:{temperature:0.7,use_stream:true}});
     await ModelManager.flush();
     await registerProviders();
     assert.deepEqual([...providers.keys()], ['Chat','Memory','Emotion','Translate','Other'].map(x=>'[Antigravity] '+x));
-    const args = {mode:'v3',prompt_chat:[{role:'user',content:'Test'}],temperature:1,max_tokens:64};
+    const args = {mode:'v3',prompt_chat:[{role:'user',content:'Test'}],temperature:1,max_tokens:64,frequency_penalty:0.5,presence_penalty:0.6};
     const controller = new AbortController();
     const chat = await providers.get('[Antigravity] Chat')!(args, controller.signal);
     assert.equal(chat.content, 'ROUTED_OK');
@@ -149,6 +149,14 @@ test('fixed providers route v3 requests to independent tabs and read changed set
     assert.equal(await read((await providers.get('[Antigravity] Chat')!(args)).content), 'ROUTED_OK');
     assert.equal(sent[2].body.model, 'gemini-3.8-flash-high');
     assert.ok(sent[2].url.includes(':streamGenerateContent'));
+    for (const request of sent) {
+        assert.equal('frequencyPenalty' in request.body.request.generationConfig, false);
+        assert.equal('presencePenalty' in request.body.request.generationConfig, false);
+    }
+    ModelManager.setConfig(RequestType.Chat, {model_id:'claude-sonnet-5-5',reasoning_level:'low',parameters:{}});
+    assert.equal((await providers.get('[Antigravity] Chat')!(args)).content, 'ROUTED_OK');
+    assert.equal(sent[3].body.request.generationConfig.frequencyPenalty, 0.5);
+    assert.equal(sent[3].body.request.generationConfig.presencePenalty, 0.6);
     assert.equal(providers.size, 5);
     await ModelManager.flush();
 });
