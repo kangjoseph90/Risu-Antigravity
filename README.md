@@ -26,7 +26,6 @@ You are responsible for complying with the applicable terms of service and usage
 -   **Model Selection**: Choose a model, reasoning level, parameters, and streaming separately in each request-type tab.
 -   **Gemini 4 Argon**: Low, Medium, and High reasoning.
 -   **Configuration**: Customize model parameters to suit your needs.
--   **Compatibility**: Frequency/Presence Penalty controls are hidden for Gemini 3.8 Flash and Gemini 4 Argon, and those fields are excluded from requests even when present in saved or RisuAI settings. Gemini 3.1 Pro and GPT-OSS are listed under **Show older models**.
 
 ### User Interface
 
