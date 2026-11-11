@@ -13,6 +13,7 @@ export {
     OPT_OUT,
     MODEL_CONFIG,
     CREDIT_OVERAGE,
+    QUICK_BACKUP,
 };
 
 enum RisuArgType {
@@ -26,8 +27,8 @@ interface RisuArgs {
 
 // Plugin Info
 const PLUGIN_TITLE = 'risu-antigravity'
-const PLUGIN_VERSION = 'v1.5.2'
-const PLUGIN_NAME = `${PLUGIN_TITLE}-${PLUGIN_VERSION}`
+const PLUGIN_VERSION = 'v2.0.0-beta.1'
+const PLUGIN_NAME = PLUGIN_TITLE
 
 // Argument Name Definitions
 const IS_LOGGED_IN = 'is_logged_in'
@@ -39,6 +40,7 @@ const SERVICE_TIER = 'service_tier'
 const OPT_OUT = 'opt_out'
 const MODEL_CONFIG = 'model_config'
 const CREDIT_OVERAGE = 'credit_overage'
+const QUICK_BACKUP = 'quick_backup'
 
 // Plugin Arguments Definition
 const RISU_ARGS: RisuArgs = {
@@ -51,6 +53,7 @@ const RISU_ARGS: RisuArgs = {
     [OPT_OUT]: RisuArgType.Int,
     [MODEL_CONFIG]: RisuArgType.String,
     [CREDIT_OVERAGE]: RisuArgType.Int,
+    [QUICK_BACKUP]: RisuArgType.String,
 }
 
 
@@ -58,5 +61,5 @@ const RISU_ARGS: RisuArgs = {
  * 등록된 모든 Risu Arg 이름을 배열로 반환
  */
 export function getAllArgNames(): string[] {
-    return Object.keys(RISU_ARGS);
+    return Object.keys(RISU_ARGS).filter(name => name !== QUICK_BACKUP);
 }

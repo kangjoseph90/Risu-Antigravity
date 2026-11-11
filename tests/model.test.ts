@@ -74,3 +74,12 @@ test('filtered lists preserve saved legacy and unknown IDs', () => {
   assert.deepEqual(normalizeModelSelection('future-model', 'high'), { model_id: 'future-model' });
   assert.equal(getRequestModelId('future-model'), 'future-model');
 });
+
+
+test('host defaults do not send unsupported Antigravity sampling fields; zero temperature is preserved', () => {
+  const generation = getGenerationConfig({ repetition_penalty: 1, min_p: 0.1, temperature: 0, max_tokens: 256 });
+  assert.equal(generation.temperature, 0);
+  assert.equal(generation.maxOutputTokens, 256);
+  assert.equal('repetitionPenalty' in generation, false);
+  assert.equal('minP' in generation, false);
+});

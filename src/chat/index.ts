@@ -2,23 +2,20 @@ import type { PluginV2ProviderArgument, PluginV2ProviderResult } from "../api";
 import { Logger } from "../shared/logger";
 import { ModelManager } from "../model";
 import { getRequestModelId } from "../model/list";
-import { RequestType } from "../shared/types";
-import { parseRequestType } from "../shared/util";
 import { applyPluginParams, getGenerationConfig, getPluginParams, getSafetySettings } from "./config";
 import { parseGeminiChat } from "./format";
 import { requestGenerateContent, requestGenerateStreamContent } from "./request";
 import { handleResponse, handleStreamResponse } from "./response";
 
-export async function handleRequest(args: PluginV2ProviderArgument, abortSignal?: AbortSignal): Promise<PluginV2ProviderResult> {
-    const requestType = parseRequestType(args.mode);
-    const config = ModelManager.getConfig(requestType);
+export async function handleRequest(args: PluginV2ProviderArgument, abortSignal?: AbortSignal, modelId?: string): Promise<PluginV2ProviderResult> {
+    const config = ModelManager.getConfig(modelId);
 
     const model = getRequestModelId(config.model_id, config.reasoning_level);
     const params = config.parameters;
     const pluginParams = getPluginParams(args);
     const newParams = applyPluginParams(params, pluginParams);
 
-    const stream = newParams.use_stream === true && requestType === RequestType.Chat;
+    const stream = newParams.use_stream === true;
         
     const contents = parseGeminiChat(args.prompt_chat);
     const generationConfig = getGenerationConfig(newParams);

@@ -26,17 +26,17 @@ export class AntigravityManager {
         // 1. Check memory cache
         if (this.projectId) {
             // Ensure other fields are loaded from storage if missing in memory
-            if (!this.serviceTier) this.serviceTier = RisuAPI.getArg(SERVICE_TIER) as string;
-            if (this.optOut === undefined) this.optOut = (RisuAPI.getArg(OPT_OUT) as number) === 1;
+            if (!this.serviceTier) this.serviceTier = (await RisuAPI.getArg(SERVICE_TIER)) as string;
+            if (this.optOut === undefined) this.optOut = ((await RisuAPI.getArg(OPT_OUT)) as number) === 1;
             return this.projectId;
         }
 
         // 2. Check persistent storage
-        const storedProjectId = RisuAPI.getArg(PROJECT_ID) as string;
+        const storedProjectId = (await RisuAPI.getArg(PROJECT_ID)) as string;
         if (storedProjectId) {
             this.projectId = storedProjectId;
-            this.serviceTier = RisuAPI.getArg(SERVICE_TIER) as string;
-            this.optOut = (RisuAPI.getArg(OPT_OUT) as number) === 1;
+            this.serviceTier = (await RisuAPI.getArg(SERVICE_TIER)) as string;
+            this.optOut = ((await RisuAPI.getArg(OPT_OUT)) as number) === 1;
 
             // Even if we have project ID, we might want to check opt-out status if not set
             if (!this.optOut) {
@@ -100,11 +100,11 @@ export class AntigravityManager {
         // Save Project ID and Tier
         if (pid) {
             this.projectId = pid;
-            RisuAPI.setArg(PROJECT_ID, pid);
+            await RisuAPI.setArg(PROJECT_ID, pid);
         }
         if (tierId) {
             this.serviceTier = tierId;
-            RisuAPI.setArg(SERVICE_TIER, tierId);
+            await RisuAPI.setArg(SERVICE_TIER, tierId);
         }
 
         // 3. Check & Update Settings (Opt-out)
@@ -119,7 +119,7 @@ export class AntigravityManager {
             });
             // Mark as opted out in our storage
             this.optOut = true;
-            RisuAPI.setArg(OPT_OUT, 1);
+            await RisuAPI.setArg(OPT_OUT, 1);
         } catch (e) {
             Logger.warn('Failed to update data collection settings:', e);
         }
@@ -207,7 +207,7 @@ export class AntigravityManager {
             parsed.project = projectId;
 
             // Inject enabledCreditTypes if credit overage is enabled
-            const isOverageEnabled = RisuAPI.getArg(CREDIT_OVERAGE) === 1;
+            const isOverageEnabled = (await RisuAPI.getArg(CREDIT_OVERAGE)) === 1;
             if (isOverageEnabled) {
                 parsed.enabledCreditTypes = ["GOOGLE_ONE_AI"];
             }
@@ -236,7 +236,7 @@ export class AntigravityManager {
         const projectId = await this.ensureInitialized();
         if (typeof body === 'object' && body !== null) {
             // Inject enabledCreditTypes if credit overage is enabled
-            const isOverageEnabled = RisuAPI.getArg(CREDIT_OVERAGE) === 1;
+            const isOverageEnabled = (await RisuAPI.getArg(CREDIT_OVERAGE)) === 1;
             body = {
                 ...body,
                 project: projectId,

@@ -1,4 +1,4 @@
-import { PLUGIN_TITLE, getAllArgNames, RISU_ARGS } from "../plugin";
+import { getAllArgNames, RISU_ARGS, QUICK_BACKUP } from "../plugin";
 import { Logger } from "./logger";
 import { RisuAPI } from "../api";
 import { ModelManager } from "../model"
@@ -20,17 +20,14 @@ interface BackupData {
  * getBackupTimestamp
  */
 export class BackupManager {
-    private static readonly DB_NAME = PLUGIN_TITLE;
-    private static readonly STORE_NAME = 'backups';
-    private static readonly BACKUP_KEY = 'latest_backup';
     private static readonly VERSION = '1.0';
 
     static async backup(): Promise<boolean> {
         try {
             const backupData = await this.gatherData();
 
-            // IndexedDB에 저장
-            await this.saveToIndexedDB(backupData);
+            // Keep credential backups in this plugin’s scoped arguments.
+            await this.saveBackup(backupData);
             return true;
         } catch (e) {
             Logger.error('Backup failed:', e);
@@ -40,7 +37,7 @@ export class BackupManager {
 
     static async restore(): Promise<boolean> {
         try {
-            const backupData = await this.loadFromIndexedDB();
+            const backupData = await this.loadBackup();
             
             if (!backupData) {
                 Logger.warn('No backup found');
@@ -70,12 +67,15 @@ export class BackupManager {
     }
 
     static async importBackupFromFile(file: File): Promise<boolean> {
+        return this.importBackupFromText(await readFileAsText(file));
+    }
+
+    static async importBackupFromText(jsonString: string): Promise<boolean> {
         try {
-            const jsonString = await readFileAsText(file);
             const backupData = JSON.parse(jsonString) as BackupData;
 
             // Basic validation
-            if (!backupData || backupData.version !== this.VERSION || !backupData.data) {
+            if (!backupData || backupData.version !== this.VERSION || !backupData.data || typeof backupData.data !== 'object' || Array.isArray(backupData.data)) {
                 throw new Error('Invalid or incompatible backup file.');
             }
 
@@ -88,6 +88,7 @@ export class BackupManager {
     }
 
     private static async gatherData(): Promise<BackupData> {
+        await ModelManager.flush();
         const backupData: BackupData = {
             version: this.VERSION,
             timestamp: new Date().toISOString(),
@@ -97,7 +98,7 @@ export class BackupManager {
         // 등록된 모든 arg 데이터 수집 (자동)
         const argNames = getAllArgNames();
         for (const argName of argNames) {
-            const value = RisuAPI.getArg(argName);
+            const value = (await RisuAPI.getArg(argName));
             if (value !== undefined) {
                 backupData.data[argName] = String(value);
             }
@@ -106,19 +107,21 @@ export class BackupManager {
     }
 
     private static async applyData(backupData: BackupData): Promise<void> {
+        await ModelManager.flush();
         // 복구된 데이터를 RisuAPI에 설정 (자동)
         for (const [argName, value] of Object.entries(backupData.data)) {
             if (this.isValidArgName(argName)) {
-                RisuAPI.setArg(argName, value);
+                await RisuAPI.setArg(argName, value);
             }
         }
         
         eventEmitter.emit(AppEvent.BACKUP_RESTORE);
+        await ModelManager.init();
     }
 
     static async hasBackup(): Promise<boolean> {
         try {
-            const backupData = await this.loadFromIndexedDB();
+            const backupData = await this.loadBackup();
             return backupData !== null;
         } catch (e) {
             return false;
@@ -127,99 +130,29 @@ export class BackupManager {
 
     static async getBackupTimestamp(): Promise<string | null> {
         try {
-            const backupData = await this.loadFromIndexedDB();
+            const backupData = await this.loadBackup();
             return backupData?.timestamp || null;
         } catch (e) {
             return null;
         }
     }
 
-    private static saveToIndexedDB(backupData: BackupData): Promise<void> {
-        return new Promise((resolve, reject) => {
-            try {
-                const request = indexedDB.open(this.DB_NAME, 1);
-
-                request.onerror = () => reject(request.error);
-
-                request.onsuccess = () => {
-                    const db = request.result;
-                    const transaction = db.transaction([this.STORE_NAME], 'readwrite');
-                    const store = transaction.objectStore(this.STORE_NAME);
-                    
-                    const putRequest = store.put(backupData, this.BACKUP_KEY);
-                    putRequest.onerror = () => reject(putRequest.error);
-                    putRequest.onsuccess = () => resolve();
-                };
-
-                request.onupgradeneeded = (event) => {
-                    const db = (event.target as IDBOpenDBRequest).result;
-                    if (!db.objectStoreNames.contains(this.STORE_NAME)) {
-                        db.createObjectStore(this.STORE_NAME);
-                    }
-                };
-            } catch (e) {
-                reject(e);
-            }
-        });
+    private static async saveBackup(backup: BackupData): Promise<void> {
+        await RisuAPI.setArg(QUICK_BACKUP, JSON.stringify(backup));
     }
 
-    private static loadFromIndexedDB(): Promise<BackupData | null> {
-        return new Promise((resolve, reject) => {
-            try {
-                const request = indexedDB.open(this.DB_NAME, 1);
-
-                request.onerror = () => reject(request.error);
-
-                request.onsuccess = () => {
-                    const db = request.result;
-                    const transaction = db.transaction([this.STORE_NAME], 'readonly');
-                    const store = transaction.objectStore(this.STORE_NAME);
-                    
-                    const getRequest = store.get(this.BACKUP_KEY);
-                    getRequest.onerror = () => reject(getRequest.error);
-                    getRequest.onsuccess = () => resolve(getRequest.result || null);
-                };
-
-                request.onupgradeneeded = (event) => {
-                    const db = (event.target as IDBOpenDBRequest).result;
-                    if (!db.objectStoreNames.contains(this.STORE_NAME)) {
-                        db.createObjectStore(this.STORE_NAME);
-                    }
-                };
-            } catch (e) {
-                reject(e);
-            }
-        });
+    private static async loadBackup(): Promise<BackupData | null> {
+        const value = await RisuAPI.getArg(QUICK_BACKUP);
+        return value ? JSON.parse(String(value)) as BackupData : null;
     }
 
     private static isValidArgName(argName: string): boolean {
-        return argName in RISU_ARGS;
+        return argName !== QUICK_BACKUP && Object.prototype.hasOwnProperty.call(RISU_ARGS, argName);
     }
 
     static async clearBackup(): Promise<boolean> {
         try {
-            await new Promise<void>((resolve, reject) => {
-                const request = indexedDB.open(this.DB_NAME, 1);
-
-                request.onerror = () => reject(request.error);
-
-                request.onsuccess = () => {
-                    const db = request.result;
-                    const transaction = db.transaction([this.STORE_NAME], 'readwrite');
-                    const store = transaction.objectStore(this.STORE_NAME);
-                    
-                    const deleteRequest = store.delete(this.BACKUP_KEY);
-                    deleteRequest.onerror = () => reject(deleteRequest.error);
-                    deleteRequest.onsuccess = () => resolve();
-                };
-
-                request.onupgradeneeded = (event) => {
-                    const db = (event.target as IDBOpenDBRequest).result;
-                    if (!db.objectStoreNames.contains(this.STORE_NAME)) {
-                        db.createObjectStore(this.STORE_NAME);
-                    }
-                };
-            });
+            await RisuAPI.setArg(QUICK_BACKUP, '');
             return true;
         } catch (e) {
             Logger.error('Clear backup failed:', e);

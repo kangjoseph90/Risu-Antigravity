@@ -53,9 +53,7 @@ function getRandomValues(array: Uint8Array): Uint8Array {
     if (c && typeof c.getRandomValues === 'function') {
         c.getRandomValues(array);
     } else {
-        for (let i = 0; i < array.length; i++) {
-            array[i] = Math.floor(Math.random() * 256);
-        }
+        throw new Error('Secure random number generation is unavailable.');
     }
     return array;
 }
@@ -92,11 +90,11 @@ export class AuthManager {
     }
 
     static async getAccessToken(): Promise<string> {
-        if (!this.isLoggedIn()) {
+        if (!(await this.isLoggedIn())) {
             throw new Error('User is not logged in');
         }
-        const accessToken = RisuAPI.getArg(ACCESS_TOKEN) as string;
-        const accessTokenExpiresStr = RisuAPI.getArg(ACCESS_TOKEN_EXPIRES) as string;
+        const accessToken = (await RisuAPI.getArg(ACCESS_TOKEN)) as string;
+        const accessTokenExpiresStr = (await RisuAPI.getArg(ACCESS_TOKEN_EXPIRES)) as string;
 
         if (!accessToken || !accessTokenExpiresStr) {
              return await this.login();
@@ -120,8 +118,8 @@ export class AuthManager {
         }
     }
 
-    static isLoggedIn(): boolean {
-        return (RisuAPI.getArg(IS_LOGGED_IN) as number) === 1;
+    static async isLoggedIn(): Promise<boolean> {
+        return ((await RisuAPI.getArg(IS_LOGGED_IN)) as number) === 1;
     }
 
     static async login(): Promise<string> {
@@ -133,48 +131,22 @@ export class AuthManager {
             // Use localhost redirect which is allowed for Native clients
             const redirectUri = 'http://localhost:3000/oauth2callback';
             const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(SCOPES)}&access_type=offline&prompt=consent&code_challenge=${challenge}&code_challenge_method=S256&state=${state}`;
-            try {
-                const width = 600;
-                const height = 600;
-                const screenWidth = (typeof window !== 'undefined' && window.screen) ? window.screen.width : 1920;
-                const screenHeight = (typeof window !== 'undefined' && window.screen) ? window.screen.height : 1080;
-                const left = screenWidth / 2 - width / 2;
-                const top = screenHeight / 2 - height / 2;
-                
-                if (typeof window !== 'undefined' && typeof window.open === 'function') {
-                    window.open(
-                        authUrl,
-                        'google_auth',
-                        `width=${width},height=${height},top=${top},left=${left}`
-                    );
-                }
-            } catch (e) {
-                Logger.error('Failed to open auth window', e);
-            }
-
             setTimeout(async () => {
-                const message = `Log in to Google and PASTE the full URL you were redirected to.
+                const message = `Copy the Google login URL below into a new browser tab, complete login, then paste the FULL redirected URL here.
 
-If the window did not open, please copy the URL below and open it in your browser:
+The plugin runs in a sandbox and cannot open a login popup automatically:
 <a href="${authUrl}" target="_blank" class="block p-2 bg-zinc-950 rounded border border-zinc-800 break-all select-all cursor-pointer font-mono text-xs my-2 text-zinc-400 hover:text-zinc-300">${authUrl}</a>`;
                 const pastedUrl = await prompt(message);
 
                 if (pastedUrl) {
                     try {
-                        // Handle both full URL and just the code
-                        let code = pastedUrl.trim();
-                        
-                        if (code.includes('code=')) {
-                            // Extract code from URL
-                            const match = code.match(/[?&]code=([^&]+)/);
-                            if (match) {
-                                code = match[1];
-                            } else {
-                                reject(new Error("Could not find code in URL"));
-                                return;
-                            }
+                        const callback = new URL(pastedUrl.trim());
+                        if (callback.origin !== new URL(redirectUri).origin || callback.pathname !== '/oauth2callback'
+                            || callback.searchParams.get('state') !== state || callback.searchParams.has('error')) {
+                            throw new Error('Invalid OAuth callback or state.');
                         }
-                        
+                        const code = callback.searchParams.get('code');
+
                         if (code && code.length > 10) {
                             // We must use the SAME redirect_uri for exchange
                             AuthManager.exchangeCodeForToken(code, redirectUri, verifier)
@@ -185,7 +157,7 @@ If the window did not open, please copy the URL below and open it in your browse
                         }
                     } catch (e) {
                         Logger.error('Login error:', e);
-                        reject(new Error(`Invalid URL or code: ${e}`));
+                        reject(new Error('Invalid login callback URL.'));
                     }
                 } else {
                     reject(new Error("Login cancelled"));
@@ -203,26 +175,25 @@ If the window did not open, please copy the URL below and open it in your browse
         params.append('grant_type', 'authorization_code');
         params.append('code_verifier', codeVerifier);
 
-        const response = await fetch('https://oauth2.googleapis.com/token', {
+        const response = await RisuAPI.nativeFetch('https://oauth2.googleapis.com/token', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: params,
+            body: params.toString(),
         });
 
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Failed to exchange code for token: ${errorText}`);
+            throw new Error(`Google token exchange failed (HTTP ${response.status}).`);
         }
 
         const tokens = await response.json();
-        this.saveTokens(tokens);
+        await this.saveTokens(tokens);
         return tokens;
     }
 
     private static async refreshAccessToken(): Promise<string> {
-        const refreshToken = RisuAPI.getArg(REFRESH_TOKEN) as string;
+        const refreshToken = (await RisuAPI.getArg(REFRESH_TOKEN)) as string;
         if (!refreshToken) {
             throw new Error('No refresh token available');
         }
@@ -233,46 +204,45 @@ If the window did not open, please copy the URL below and open it in your browse
         params.append('client_secret', CLIENT_SECRET);
         params.append('grant_type', 'refresh_token');
 
-        const response = await fetch('https://oauth2.googleapis.com/token', {
+        const response = await RisuAPI.nativeFetch('https://oauth2.googleapis.com/token', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: params,
+            body: params.toString(),
         });
 
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Failed to refresh token: ${errorText}`);
+            throw new Error(`Google token refresh failed (HTTP ${response.status}).`);
         }
 
         const tokens = await response.json();
-        this.saveTokens(tokens);
+        await this.saveTokens(tokens);
         return tokens.access_token;
     }
 
-    private static saveTokens(tokens: any) {
+    private static async saveTokens(tokens: any): Promise<void> {
         const expiresIn = tokens.expires_in; // seconds
         const expiresAt = new Date(new Date().getTime() + expiresIn * 1000);
         
-        RisuAPI.setArg(IS_LOGGED_IN, 1);
-        RisuAPI.setArg(ACCESS_TOKEN, tokens.access_token);
-        RisuAPI.setArg(ACCESS_TOKEN_EXPIRES, expiresAt.toISOString());
+        await RisuAPI.setArg(IS_LOGGED_IN, 1);
+        await RisuAPI.setArg(ACCESS_TOKEN, tokens.access_token);
+        await RisuAPI.setArg(ACCESS_TOKEN_EXPIRES, expiresAt.toISOString());
         
         if (tokens.refresh_token) {
-            RisuAPI.setArg(REFRESH_TOKEN, tokens.refresh_token);
+            await RisuAPI.setArg(REFRESH_TOKEN, tokens.refresh_token);
         }
     }
 
-    static logout(): void {
+    static async logout(): Promise<void> {
         this.userProfileCache = null;
-        RisuAPI.setArg(IS_LOGGED_IN, 0);
-        RisuAPI.setArg(ACCESS_TOKEN, '');
-        RisuAPI.setArg(ACCESS_TOKEN_EXPIRES, '');
-        RisuAPI.setArg(REFRESH_TOKEN, '');
-        RisuAPI.setArg(PROJECT_ID, '');
-        RisuAPI.setArg(SERVICE_TIER, '');
-        RisuAPI.setArg(OPT_OUT, 0);
+        await RisuAPI.setArg(IS_LOGGED_IN, 0);
+        await RisuAPI.setArg(ACCESS_TOKEN, '');
+        await RisuAPI.setArg(ACCESS_TOKEN_EXPIRES, '');
+        await RisuAPI.setArg(REFRESH_TOKEN, '');
+        await RisuAPI.setArg(PROJECT_ID, '');
+        await RisuAPI.setArg(SERVICE_TIER, '');
+        await RisuAPI.setArg(OPT_OUT, 0);
 
         // Emit logout event
         eventEmitter.emit(AppEvent.USER_LOGOUT);
@@ -284,7 +254,7 @@ If the window did not open, please copy the URL below and open it in your browse
         }
         try {
             const token = await this.getAccessToken();
-            const res = await fetch(
+            const res = await RisuAPI.nativeFetch(
                 "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
                 {
                     headers: { Authorization: `Bearer ${token}` },

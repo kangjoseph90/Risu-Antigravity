@@ -161,6 +161,10 @@
                     >
                         Import from File
                     </button>
+                    <button
+                        class="w-full text-left px-4 py-2.5 text-sm text-zinc-300 hover:bg-blue-600 hover:text-white transition-colors flex items-center gap-2"
+                        on:click={() => { dispatch("importText"); showRestoreDropdown = false; }}
+                    >Paste Backup JSON</button>
                 </div>
             {/if}
             <input

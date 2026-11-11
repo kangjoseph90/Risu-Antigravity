@@ -14,7 +14,7 @@ You are responsible for complying with the applicable terms of service and usage
 
 ### Google Antigravity Provider
 
--   **Seamless Integration**: Adds "[Google] Antigravity" to the list of available providers in RisuAI.
+-   **Seamless Integration**: Registers each Antigravity model directly in RisuAI’s model list.
 
 ### Authentication & Security
 
@@ -23,7 +23,7 @@ You are responsible for complying with the applicable terms of service and usage
 
 ### Model Management
 
--   **Model Selection**: Choose from available Antigravity models.
+-   **Model Selection**: Select Antigravity models in RisuAI; configure reasoning and parameters per model in the Antigravity settings page.
 -   **Gemini 4 Argon**: Low, Medium, and High reasoning.
 -   **Configuration**: Customize model parameters to suit your needs.
 
@@ -33,6 +33,14 @@ You are responsible for complying with the applicable terms of service and usage
 -   **Status Indicators**: Visual indicators for login status and service tier.
 
 ---
+
+## API v3 migration (2.0.0 beta)
+
+Requires a RisuAI release with Plugin API 3.0; development is verified against `v2026.10.295`. Open **Settings → Antigravity** for the existing configuration UI. Select `[Antigravity] …` models in RisuAI for your main and auxiliary models.
+
+API 2.1 is preserved on [`legacy-api-2.1`](https://github.com/kangjoseph90/Risu-Antigravity/tree/legacy-api-2.1), with the existing [v1.5.2 release](https://github.com/kangjoseph90/Risu-Antigravity/releases/tag/v1.5.2). Before installing a plugin update, export a file backup. To migrate, export a backup from v1.5.2, install the v3 plugin, and import the backup (file import or **Paste Backup JSON**). Old request-type profiles are converted to model profiles; if multiple profiles use the same model, the chat profile takes priority and the original profiles remain in the backup data. Re-select your main and auxiliary models in RisuAI.
+
+The v3 plugin runs inside RisuAI’s sandbox. Network requests use `nativeFetch`; quick backups use plugin-scoped arguments rather than the host’s shared plugin storage. Streaming depends on the selected RisuAI network transport and upstream availability. The public web proxy and desktop/local transports can behave differently.
 
 ## Installation & Build
 

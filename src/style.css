@@ -2,3 +2,6 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* API v3 owns an isolated iframe, so it needs its own document baseline. */
+html, body { margin: 0; width: 100%; height: 100%; background: transparent; color-scheme: dark; }

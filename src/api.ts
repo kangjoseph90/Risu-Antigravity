@@ -1,4 +1,4 @@
-import { PLUGIN_NAME, RISU_ARGS, RisuArgType } from './plugin'
+import { RISU_ARGS, RisuArgType } from './plugin'
 
 export interface GlobalFetchArgs {
   plainFetchForce?: boolean;
@@ -63,6 +63,7 @@ export type PluginV2ProviderArgument = {
 export type PluginV2ProviderOptions = {
     tokenizer?: string
     tokenizerFunc?: (content: string) => number[] | Promise<number[]>
+    model?: { name: string; shortName: string; fullName: string; flags: number[]; tokenizer?: number; parameters: string[] }
 }
 
 export type PluginV2ProviderResult = {
@@ -70,118 +71,59 @@ export type PluginV2ProviderResult = {
     content: string | ReadableStream
 }
 
-type EditFunction = (content: string) => string | Promise<string>
+interface PluginAPI {
+    nativeFetch(url: string, args: NativeFetchArgs & { logFetch?: boolean }): Promise<Response>;
+    getArgument(name: string): Promise<string | number | undefined>;
+    setArgument(name: string, value: string | number): Promise<void>;
+    addProvider(name: string, callback: (args: PluginV2ProviderArgument, signal?: AbortSignal) => Promise<PluginV2ProviderResult>, options?: PluginV2ProviderOptions): Promise<void>;
+    registerSetting(name: string, callback: () => void | Promise<void>, icon?: string, iconType?: string, id?: string): Promise<{ id: string }>;
+    showContainer(mode: 'fullscreen'): Promise<void>;
+    hideContainer(): Promise<void>;
 
-enum ScriptMode {
-    EditInput = 'input',
-    EditOutput = 'output',
-    EditProcess = 'process',
-    EditDisplay = 'display'
 }
 
-type ReplacerFunction = (content: any[], type: string) => any[] | Promise<any[]>
+declare const risuai: PluginAPI;
 
-enum ReplacerType {
-    BeforeRequest = 'beforeRequest',
-    AfterRequest = 'afterRequest',
-}
-
-const rawAPI = {
-    //@ts-ignore
-    risuFetch,
-    //@ts-ignore
-    nativeFetch,
-    //@ts-ignore
-    getArg,
-    //@ts-ignore
-    setArg,
-    //@ts-ignore
-    getChar,
-    //@ts-ignore
-    setChar,
-    //@ts-ignore
-    addProvider,
-    //@ts-ignore
-    addRisuScriptHandler,
-    //@ts-ignore
-    removeRisuScriptHandler,
-    //@ts-ignore
-    addRisuReplacer,
-    //@ts-ignore
-    removeRisuReplacer,
-    //@ts-ignore
-    onUnload,
-}
-
-function getFullName(name: string) {
-    return `${PLUGIN_NAME}::${name}`
-}
-
-/**
- * RisuAI Plugin API
- * - risuFetch
- * - nativeFetch
- * - getArg
- * - setArg
- * - getChar
- * - setChar
- * - addProvider
- * - addRisuScriptHandler
- * - removeRisuScriptHandler
- * - addRisuReplacer
- * - removeRisuReplacer
- * - onUnload
- */
+/** The only bridge to the host. UI components use their own iframe document. */
 export class RisuAPI {
-    static risuFetch(url: string, args?: GlobalFetchArgs): Promise<GlobalFetchResult> {
-        return rawAPI.risuFetch(url, args);
-    }   
-    static nativeFetch(url: string, args: NativeFetchArgs): Promise<Response> {
-        return rawAPI.nativeFetch(url, args);
+    static async risuFetch(url: string, args: GlobalFetchArgs = {}): Promise<GlobalFetchResult> {
+        const response = await this.nativeFetch(url, {
+            method: args.method ?? 'POST',
+            headers: args.headers,
+            body: typeof args.body === 'string' ? args.body : args.body === undefined ? undefined : JSON.stringify(args.body),
+            signal: args.abortSignal,
+        });
+        const text = await response.text();
+        let data: unknown = text;
+        try { data = JSON.parse(text); } catch { /* Some errors are plain text. */ }
+        return { ok: response.ok, status: response.status, data, headers: Object.fromEntries(response.headers.entries()) };
     }
-    static getArg(name: string): string | number | undefined {
-        if(RISU_ARGS[name] === undefined) return;
-        switch(RISU_ARGS[name]) {
-            case RisuArgType.Int:
-                return Number(rawAPI.getArg(getFullName(name)));
-            case RisuArgType.String:
-                return String(rawAPI.getArg(getFullName(name)));
-        }
-    }
-    static setArg(name: string, value: string | number) {
-        if(RISU_ARGS[name] === undefined) return;
-        switch(RISU_ARGS[name]) {
-            case RisuArgType.Int:
-                rawAPI.setArg(getFullName(name), Number(value));
-                break;
-            case RisuArgType.String:
-                rawAPI.setArg(getFullName(name), String(value));
-                break;
-        }
-    }
-    static getChar(): any {
-        return rawAPI.getChar();
-    }
-    static setChar(char: any) {
-        rawAPI.setChar(char);
-    }
-    static addProvider(name: string, func: (arg: PluginV2ProviderArgument, abortSignal?: AbortSignal) => Promise<PluginV2ProviderResult>, options?: PluginV2ProviderOptions) {
-        rawAPI.addProvider(name, func, options);
-    }
-    static addRisuScriptHandler(mode: ScriptMode, func: EditFunction) {
-        rawAPI.addRisuScriptHandler(mode, func);
-    }
-    static removeRisuScriptHandler(mode: ScriptMode, func: EditFunction) {
-        rawAPI.removeRisuScriptHandler(mode, func);
-    }
-    static addRisuReplacer(type: ReplacerType, func: ReplacerFunction) {
-        rawAPI.addRisuReplacer(type, func);
-    }
-    static removeRisuReplacer(type: ReplacerType, func: ReplacerFunction) {
-        rawAPI.removeRisuReplacer(type, func);
-    }
-    static onUnload(callback: () => void) {
-        rawAPI.onUnload(callback);
-    }
-}
 
+    static nativeFetch(url: string, args: NativeFetchArgs): Promise<Response> {
+        // Google authentication and chat contents must not enter the host fetch log.
+        return risuai.nativeFetch(url, { ...args, method: args.method ?? 'GET', logFetch: false });
+    }
+
+    static async getArg(name: string): Promise<string | number | undefined> {
+        if (!Object.prototype.hasOwnProperty.call(RISU_ARGS, name)) return undefined;
+        const value = await risuai.getArgument(name);
+        if (value === undefined || value === null) return undefined;
+        return RISU_ARGS[name] === RisuArgType.Int ? Number(value) : String(value);
+    }
+
+    static async setArg(name: string, value: string | number): Promise<void> {
+        if (!Object.prototype.hasOwnProperty.call(RISU_ARGS, name)) return;
+        await risuai.setArgument(name, RISU_ARGS[name] === RisuArgType.Int ? Number(value) : String(value));
+    }
+
+    static addProvider(name: string, callback: (args: PluginV2ProviderArgument, signal?: AbortSignal) => Promise<PluginV2ProviderResult>, options?: PluginV2ProviderOptions): Promise<void> {
+        return risuai.addProvider(name, callback, options);
+    }
+
+    static registerSetting(callback: () => void | Promise<void>): Promise<{ id: string }> {
+        return risuai.registerSetting('Antigravity', callback, '', 'none', 'risu-antigravity-settings');
+    }
+
+    static showContainer(): Promise<void> { return risuai.showContainer('fullscreen'); }
+    static hideContainer(): Promise<void> { return risuai.hideContainer(); }
+}

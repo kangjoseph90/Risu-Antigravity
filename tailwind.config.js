@@ -5,7 +5,7 @@ export default {
   ],
   important: "#risu-antigravity-container",
   corePlugins: {
-    preflight: false,
+    preflight: true,
   },
   theme: {
     extend: {},

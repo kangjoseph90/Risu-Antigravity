@@ -26,9 +26,9 @@
     let error = "";
     let isOverageEnabled = false;
 
-    function toggleOverage() {
+    async function toggleOverage() {
         isOverageEnabled = !isOverageEnabled;
-        RisuAPI.setArg(CREDIT_OVERAGE, isOverageEnabled ? 1 : 0);
+        await RisuAPI.setArg(CREDIT_OVERAGE, isOverageEnabled ? 1 : 0);
     }
 
     function formatResetTime(isoTime: string): string {
@@ -119,9 +119,13 @@
     }
 
     onMount(() => {
-        isOverageEnabled = RisuAPI.getArg(CREDIT_OVERAGE) === 1;
-        loadQuotaData();
+        void initialize();
     });
+
+    async function initialize() {
+        isOverageEnabled = await RisuAPI.getArg(CREDIT_OVERAGE) === 1;
+        await loadQuotaData();
+    }
 </script>
 
 <div class="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">

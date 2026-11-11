@@ -1,15 +1,16 @@
 <script lang="ts">
-    import { onMount } from "svelte";
+    import { onMount, onDestroy } from "svelte";
+    import { DEFAULT_MODEL_ID } from "../model/list";
     import { AuthManager } from "../auth";
     import { AntigravityManager } from "../antigravity";
     import { ModelManager } from "../model";
-    import { RequestType, type ModelParameters, type ReasoningLevel } from "../shared/types";
+    import { type ModelParameters, type ReasoningLevel } from "../shared/types";
     import { BackupManager } from "../shared/backup";
     import { Logger } from "../shared/logger";
-    import { alert, confirm } from "./popup";
+    import { alert, confirm, prompt } from "./popup";
 
     import ModalHeader from "./modal/ModalHeader.svelte";
-    import RequestTypeSidebar from "./modal/RequestTypeSidebar.svelte";
+    import ModelSidebar from "./modal/ModelSidebar.svelte";
     import ModelSettings from "./modal/ModelSettings.svelte";
     import QuotaView from "./modal/QuotaView.svelte";
 
@@ -22,7 +23,7 @@
     let serviceTier = "";
     let optOut = false;
 
-    let activeTab: RequestType = RequestType.Chat;
+    let activeModelId = DEFAULT_MODEL_ID;
     let activeView: "settings" | "quota" = "settings";
 
     // Local state for the current tab's config to bind to inputs
@@ -31,17 +32,15 @@
     let currentParams: ModelParameters = {};
     let modalHeader: ModalHeader;
 
-    const requestTypes = Object.values(RequestType).filter(
-        (t) => t !== RequestType.Unknown
-    );
-
     onMount(async () => {
+        loadModelConfig(activeModelId);
         await checkLoginStatus();
-        loadModelConfig(activeTab);
     });
 
+    onDestroy(() => { saveCurrentConfig(); });
+
     async function checkLoginStatus() {
-        isLoggedIn = AuthManager.isLoggedIn();
+        isLoggedIn = await AuthManager.isLoggedIn();
         if (isLoggedIn) {
             try {
                 userProfile = await AuthManager.fetchUserProfile();
@@ -72,8 +71,8 @@
         }
     }
 
-    function handleLogout() {
-        AuthManager.logout();
+    async function handleLogout() {
+        await AuthManager.logout();
         isLoggedIn = false;
         userProfile = null;
         projectId = "";
@@ -85,27 +84,28 @@
         activeView = "quota";
     }
 
-    function loadModelConfig(type: RequestType) {
-        const config = ModelManager.getConfig(type);
+    function loadModelConfig(modelId: string) {
+        const config = ModelManager.getConfig(modelId);
         currentModelId = config.model_id;
         currentReasoningLevel = config.reasoning_level;
         currentParams = { ...config.parameters };
     }
 
     function saveCurrentConfig() {
-        ModelManager.setConfig(activeTab, {
+        if (!currentModelId) return;
+        ModelManager.setConfig(activeModelId, {
             model_id: currentModelId,
             reasoning_level: currentReasoningLevel,
             parameters: { ...currentParams },
         });
     }
 
-    function handleTabChange(event: CustomEvent<RequestType>) {
-        const type = event.detail;
+    function handleModelChange(event: CustomEvent<string>) {
+        const modelId = event.detail;
         saveCurrentConfig(); // Save previous tab
-        activeTab = type;
+        activeModelId = modelId;
         activeView = "settings";
-        loadModelConfig(type);
+        loadModelConfig(modelId);
     }
 
     // Backup Handlers
@@ -124,9 +124,9 @@
             )
         ) {
             if (await BackupManager.restore()) {
+                loadModelConfig(activeModelId);
                 await alert("Restored successfully!");
                 await checkLoginStatus();
-                loadModelConfig(activeTab);
             } else {
                 await alert("Restore failed or no backup found.");
             }
@@ -141,14 +141,24 @@
         const file = event.detail;
         if (file) {
             if (await BackupManager.importBackupFromFile(file)) {
+                loadModelConfig(activeModelId);
                 await alert("Imported successfully!");
                 await checkLoginStatus();
-                loadModelConfig(activeTab);
             } else {
                 await alert("Import failed.");
             }
         }
     }
+    async function handleImportText() {
+        const json = await prompt("Paste the full contents of your exported backup JSON.");
+        if (json === null) return;
+        if (await BackupManager.importBackupFromText(json)) {
+            loadModelConfig(activeModelId);
+            await alert("Imported successfully!");
+            await checkLoginStatus();
+        } else await alert("Import failed. Check the backup JSON.");
+    }
+
 </script>
 
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
@@ -181,6 +191,7 @@
             on:quickRestore={handleQuickRestore}
             on:export={handleExport}
             on:importFile={handleImport}
+            on:importText={handleImportText}
         />
 
         <!-- Body -->
@@ -191,11 +202,7 @@
                     <QuotaView on:back={() => activeView = "settings"} />
                 </div>
             {:else}
-                <RequestTypeSidebar
-                    {requestTypes}
-                    {activeTab}
-                    on:tabChange={handleTabChange}
-                />
+                <ModelSidebar {activeModelId} on:modelChange={handleModelChange} />
 
                 <!-- Content -->
                 <div class="flex-1 overflow-y-auto bg-[#1e1e20]">
