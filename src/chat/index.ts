@@ -1,5 +1,5 @@
 import type { PluginV2ProviderArgument, PluginV2ProviderResult } from "../api";
-import { Logger } from "../shared/logger";
+import { RequestType, type ConfiguredRequestType } from "../shared/types";
 import { ModelManager } from "../model";
 import { getRequestModelId } from "../model/list";
 import { applyPluginParams, getGenerationConfig, getPluginParams, getSafetySettings } from "./config";
@@ -7,8 +7,8 @@ import { parseGeminiChat } from "./format";
 import { requestGenerateContent, requestGenerateStreamContent } from "./request";
 import { handleResponse, handleStreamResponse } from "./response";
 
-export async function handleRequest(args: PluginV2ProviderArgument, abortSignal?: AbortSignal, modelId?: string): Promise<PluginV2ProviderResult> {
-    const config = ModelManager.getConfig(modelId);
+export async function handleRequest(args: PluginV2ProviderArgument, abortSignal?: AbortSignal, type: ConfiguredRequestType = RequestType.Chat): Promise<PluginV2ProviderResult> {
+    const config = ModelManager.getConfig(type);
 
     const model = getRequestModelId(config.model_id, config.reasoning_level);
     const params = config.parameters;

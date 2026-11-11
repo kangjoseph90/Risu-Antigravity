@@ -7,6 +7,12 @@ export enum RequestType {
     Unknown = 'unknown',
 }
 
+export const REQUEST_TYPES = [RequestType.Chat, RequestType.Memory, RequestType.Emotion, RequestType.Translate, RequestType.Other] as const;
+export type ConfiguredRequestType = typeof REQUEST_TYPES[number];
+export function getRequestTypeLabel(type: ConfiguredRequestType): string {
+    return type.charAt(0).toUpperCase() + type.slice(1);
+}
+
 export interface PluginParameters {
     frequency_penalty?: number
     presence_penalty?: number

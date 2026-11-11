@@ -9,7 +9,6 @@ import {
 } from "../plugin";
 import { RisuAPI } from "../api";
 import { Logger } from "../shared/logger";
-import { prompt } from "../ui/popup";
 import { eventEmitter, AppEvent } from "../shared/events";
 
 const CLIENT_ID =
@@ -136,6 +135,7 @@ export class AuthManager {
 
 The plugin runs in a sandbox and cannot open a login popup automatically:
 <a href="${authUrl}" target="_blank" class="block p-2 bg-zinc-950 rounded border border-zinc-800 break-all select-all cursor-pointer font-mono text-xs my-2 text-zinc-400 hover:text-zinc-300">${authUrl}</a>`;
+                const { prompt } = await import("../ui/popup");
                 const pastedUrl = await prompt(message);
 
                 if (pastedUrl) {

@@ -1,16 +1,15 @@
 <script lang="ts">
     import { onMount, onDestroy } from "svelte";
-    import { DEFAULT_MODEL_ID } from "../model/list";
     import { AuthManager } from "../auth";
     import { AntigravityManager } from "../antigravity";
     import { ModelManager } from "../model";
-    import { type ModelParameters, type ReasoningLevel } from "../shared/types";
+    import { RequestType, REQUEST_TYPES, type ConfiguredRequestType, type ModelParameters, type ReasoningLevel } from "../shared/types";
     import { BackupManager } from "../shared/backup";
     import { Logger } from "../shared/logger";
     import { alert, confirm, prompt } from "./popup";
 
     import ModalHeader from "./modal/ModalHeader.svelte";
-    import ModelSidebar from "./modal/ModelSidebar.svelte";
+    import RequestTypeSidebar from "./modal/RequestTypeSidebar.svelte";
     import ModelSettings from "./modal/ModelSettings.svelte";
     import QuotaView from "./modal/QuotaView.svelte";
 
@@ -23,7 +22,7 @@
     let serviceTier = "";
     let optOut = false;
 
-    let activeModelId = DEFAULT_MODEL_ID;
+    let activeTab: ConfiguredRequestType = RequestType.Chat;
     let activeView: "settings" | "quota" = "settings";
 
     // Local state for the current tab's config to bind to inputs
@@ -33,7 +32,7 @@
     let modalHeader: ModalHeader;
 
     onMount(async () => {
-        loadModelConfig(activeModelId);
+        loadModelConfig(activeTab);
         await checkLoginStatus();
     });
 
@@ -84,8 +83,8 @@
         activeView = "quota";
     }
 
-    function loadModelConfig(modelId: string) {
-        const config = ModelManager.getConfig(modelId);
+    function loadModelConfig(type: ConfiguredRequestType) {
+        const config = ModelManager.getConfig(type);
         currentModelId = config.model_id;
         currentReasoningLevel = config.reasoning_level;
         currentParams = { ...config.parameters };
@@ -93,19 +92,19 @@
 
     function saveCurrentConfig() {
         if (!currentModelId) return;
-        ModelManager.setConfig(activeModelId, {
+        ModelManager.setConfig(activeTab, {
             model_id: currentModelId,
             reasoning_level: currentReasoningLevel,
             parameters: { ...currentParams },
         });
     }
 
-    function handleModelChange(event: CustomEvent<string>) {
-        const modelId = event.detail;
+    function handleTabChange(event: CustomEvent<ConfiguredRequestType>) {
+        const type = event.detail;
         saveCurrentConfig(); // Save previous tab
-        activeModelId = modelId;
+        activeTab = type;
         activeView = "settings";
-        loadModelConfig(modelId);
+        loadModelConfig(type);
     }
 
     // Backup Handlers
@@ -124,7 +123,7 @@
             )
         ) {
             if (await BackupManager.restore()) {
-                loadModelConfig(activeModelId);
+                loadModelConfig(activeTab);
                 await alert("Restored successfully!");
                 await checkLoginStatus();
             } else {
@@ -141,7 +140,7 @@
         const file = event.detail;
         if (file) {
             if (await BackupManager.importBackupFromFile(file)) {
-                loadModelConfig(activeModelId);
+                loadModelConfig(activeTab);
                 await alert("Imported successfully!");
                 await checkLoginStatus();
             } else {
@@ -153,7 +152,7 @@
         const json = await prompt("Paste the full contents of your exported backup JSON.");
         if (json === null) return;
         if (await BackupManager.importBackupFromText(json)) {
-            loadModelConfig(activeModelId);
+            loadModelConfig(activeTab);
             await alert("Imported successfully!");
             await checkLoginStatus();
         } else await alert("Import failed. Check the backup JSON.");
@@ -202,7 +201,7 @@
                     <QuotaView on:back={() => activeView = "settings"} />
                 </div>
             {:else}
-                <ModelSidebar {activeModelId} on:modelChange={handleModelChange} />
+                <RequestTypeSidebar requestTypes={[...REQUEST_TYPES]} {activeTab} on:tabChange={handleTabChange} />
 
                 <!-- Content -->
                 <div class="flex-1 overflow-y-auto bg-[#1e1e20]">

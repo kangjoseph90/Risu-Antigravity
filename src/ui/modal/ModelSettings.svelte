@@ -1,7 +1,7 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
     import type { ModelParameters, ReasoningLevel } from "../../shared/types";
-    import { getModel, getReasoningLevels } from "../../model/list";
+    import { MODELS, getVisibleModels, getReasoningLevels, normalizeModelSelection } from "../../model/list";
 
     export let currentModelId: string = "";
     export let currentParams: ModelParameters = {};
@@ -9,7 +9,14 @@
 
     const dispatch = createEventDispatcher();
     $: reasoningLevels = getReasoningLevels(currentModelId);
-    $: selectedModel = getModel(currentModelId);
+    let showOlderModels = false;
+    $: visibleModels = getVisibleModels(showOlderModels, currentModelId);
+    $: selectedOlderModel = MODELS.some((model) => model.id === currentModelId && !model.isLatest);
+
+    function onModelChange() {
+        currentReasoningLevel = normalizeModelSelection(currentModelId, currentReasoningLevel).reasoning_level;
+        onConfigChange();
+    }
 
     function onConfigChange() {
         dispatch("saveConfig");
@@ -54,11 +61,48 @@
 <div class="max-w-3xl mx-auto p-4 sm:p-6 space-y-6 sm:space-y-8">
     <!-- Model Selection -->
     <div class="space-y-3">
-        <div class="space-y-2">
-            <h3 class="text-sm font-medium text-zinc-300">Model Configuration</h3>
-            <p class="text-lg font-semibold text-white">{selectedModel?.displayName ?? currentModelId}</p>
-            <p class="text-xs text-zinc-400">Select this model in RisuAI for chat or auxiliary requests. These settings apply whenever this model is selected.</p>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <label for="model-config" class="text-sm font-medium text-zinc-300"
+                >Model Configuration</label
+            >
+            <div class="flex items-center gap-3">
+                <label for="older-models-toggle" class="text-sm text-zinc-400"
+                    >Show older models</label
+                >
+                <button
+                    id="older-models-toggle"
+                    type="button"
+                    role="switch"
+                    aria-checked={showOlderModels}
+                    aria-label="Show older models"
+                    class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/50 {showOlderModels
+                        ? 'bg-blue-600'
+                        : 'bg-zinc-700'}"
+                    on:click={() => (showOlderModels = !showOlderModels)}
+                >
+                    <span
+                        class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm {showOlderModels
+                            ? 'translate-x-6'
+                            : 'translate-x-1'}"
+                    />
+                </button>
+            </div>
         </div>
+        <select
+            id="model-config"
+            bind:value={currentModelId}
+            on:change={onModelChange}
+            class="w-full px-4 py-2.5 bg-[#252528] border border-zinc-700 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-colors"
+        >
+            {#each visibleModels as model}
+                <option value={model.id}>{model.displayName}</option>
+            {/each}
+        </select>
+        {#if !showOlderModels && selectedOlderModel}
+            <p class="text-xs text-zinc-400">
+                Your saved older model is kept selected. Enable "Show older models" to see all models.
+            </p>
+        {/if}
         {#if reasoningLevels.length > 0}
             <div class="space-y-2">
                 <label for="model-reasoning" class="text-sm font-medium text-zinc-300"

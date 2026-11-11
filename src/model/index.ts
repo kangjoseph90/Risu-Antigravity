@@ -1,14 +1,12 @@
 import { RisuAPI } from '../api';
 import { MODEL_CONFIG } from '../plugin';
-import { AppEvent, eventEmitter } from '../shared/events';
+import { RequestType, type ConfiguredRequestType } from '../shared/types';
 import { DEFAULT_MODEL_ID } from './list';
 import { migrateModelSettings, normalizeModelConfig, type ModelConfiguration, type ModelSettings } from './config';
 
 export class ModelManager {
-    private static settings: ModelSettings = { version: 2, models: {} };
+    private static settings: ModelSettings = { version: 3, requests: {} };
     private static writes: Promise<void> = Promise.resolve();
-
-    static { eventEmitter.on(AppEvent.BACKUP_RESTORE, () => { void this.init(); }); }
 
     static async init(): Promise<void> {
         await this.flush();
@@ -18,12 +16,12 @@ export class ModelManager {
         this.settings = migrateModelSettings(parsed);
     }
 
-    static getConfig(modelId: string = DEFAULT_MODEL_ID): ModelConfiguration {
-        return this.settings.models[modelId] ?? normalizeModelConfig({ model_id: modelId, parameters: {} });
+    static getConfig(type: ConfiguredRequestType = RequestType.Chat): ModelConfiguration {
+        return this.settings.requests[type] ?? normalizeModelConfig({ model_id: DEFAULT_MODEL_ID, parameters: {} });
     }
 
-    static setConfig(modelId: string, config: ModelConfiguration): void {
-        this.settings.models[modelId] = normalizeModelConfig({ ...config, model_id: modelId });
+    static setConfig(type: ConfiguredRequestType, config: ModelConfiguration): void {
+        this.settings.requests[type] = normalizeModelConfig(config);
         const serialized = JSON.stringify(this.settings);
         this.writes = this.writes.catch(() => {}).then(() => RisuAPI.setArg(MODEL_CONFIG, serialized));
     }

@@ -1,4 +1,5 @@
-import type { ModelParameters } from '../shared/types';
+import { RequestType, REQUEST_TYPES, type ConfiguredRequestType, type ModelParameters } from '../shared/types';
+import { DEFAULT_MODEL_ID } from './list';
 import { normalizeModelSelection, type ModelSelection } from './list';
 
 export interface ModelConfiguration extends ModelSelection {
@@ -14,33 +15,43 @@ export function normalizeModelConfig(config: ModelConfiguration): ModelConfigura
 }
 
 export interface ModelSettings {
-  version: 2;
-  models: Record<string, ModelConfiguration>;
-  legacyRequestConfigs?: Record<string, unknown>;
+  version: 3;
+  requests: Partial<Record<ConfiguredRequestType, ModelConfiguration>>;
+  // Keep beta.1's model settings available in exported backups.
+  previousModelConfigs?: Record<string, unknown>;
 }
 
-/** Convert v1 request-type settings without discarding the original profiles. */
+function readConfig(raw: unknown): ModelConfiguration | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return;
+  const config = raw as ModelConfiguration;
+  if (typeof config.model_id !== 'string' || ['__proto__', 'prototype', 'constructor'].includes(config.model_id)
+    || !config.parameters || typeof config.parameters !== 'object' || Array.isArray(config.parameters)) return;
+  return normalizeModelConfig(config);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+/** Restore the original request tabs; retain beta.1 settings without guessing their purpose. */
 export function migrateModelSettings(value: unknown): ModelSettings {
-  const settings: ModelSettings = { version: 2, models: {} };
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return settings;
-  const source = value as Record<string, unknown>;
-  const current = source.version === 2 && source.models && typeof source.models === 'object';
-  const configs = (current ? source.models : source) as Record<string, unknown>;
-  const entries = Object.entries(configs);
-  if (!current) entries.sort(([a], [b]) => (a === 'chat' ? -1 : b === 'chat' ? 1 : 0));
-  for (const [key, raw] of entries) {
-    if (['__proto__', 'prototype', 'constructor'].includes(key)) continue;
-    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) continue;
-    const config = raw as ModelConfiguration;
-    if (typeof config.model_id !== 'string' || ['__proto__', 'prototype', 'constructor'].includes(config.model_id)
-      || !config.parameters || typeof config.parameters !== 'object' || Array.isArray(config.parameters)) continue;
-    const normalized = normalizeModelConfig(config);
-    const modelId = current ? key : normalized.model_id;
-    if (!Object.prototype.hasOwnProperty.call(settings.models, modelId)) settings.models[modelId] = normalized;
+  const settings: ModelSettings = { version: 3, requests: {} };
+  if (!isRecord(value)) return settings;
+  const beta = value.version === 2 && isRecord(value.models);
+  const configs = value.version === 3 && isRecord(value.requests) ? value.requests
+    : beta ? (isRecord(value.legacyRequestConfigs) ? value.legacyRequestConfigs : {}) : value;
+  for (const type of REQUEST_TYPES) {
+    const config = readConfig(Object.prototype.hasOwnProperty.call(configs, type) ? configs[type] : undefined);
+    if (config) settings.requests[type] = config;
   }
-  if (!current && Object.keys(configs).length) settings.legacyRequestConfigs = configs;
-  else if (source.legacyRequestConfigs && typeof source.legacyRequestConfigs === 'object') {
-    settings.legacyRequestConfigs = source.legacyRequestConfigs as Record<string, unknown>;
-  }
+  if (beta) {
+    settings.previousModelConfigs = value.models as Record<string, unknown>;
+    // No role information exists for beta.1-only profiles. Use the former default
+    // model profile for Chat; leave the other tabs at their normal defaults.
+    if (!settings.requests.chat) {
+      const chat = readConfig((value.models as Record<string, unknown>)[DEFAULT_MODEL_ID]);
+      if (chat) settings.requests[RequestType.Chat] = chat;
+    }
+  } else if (isRecord(value.previousModelConfigs)) settings.previousModelConfigs = value.previousModelConfigs;
   return settings;
 }
