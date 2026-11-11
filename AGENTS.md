@@ -1,68 +1,69 @@
-# Risu-Antigravity 작업 지침
+# Risu-Antigravity Agent Guidelines
 
-이 파일은 이 저장소를 수정하는 에이전트를 위한 지침이다. 신모델 대응에서는 **발견 → 접근 가능 여부 확인 → 구현 → 실제 검증 → 배포**를 구분한다. 모델 ID를 찾았다는 사실만으로 응답·스트리밍·할당량까지 검증됐다고 보고하지 않는다.
+These instructions apply to agents working in this repository. Treat new model support as separate stages: **discovery → access checks → implementation → live validation → release**. Finding a model ID does not establish that generation, streaming, or quota reporting works.
 
-## 시작할 때
+## Before starting
 
-- `git status`, 현재 버전, 최근 커밋·태그·릴리스를 먼저 확인한다. 기존 미커밋 변경은 보존하고, 작업한 파일·변경만 선택해서 커밋한다.
-- 로컬 모델 조회·모니터링 도구가 미추적 파일로 존재할 수 있다. `scripts/`, 인증 설정 파일, 로컬 테스트 도구를 일괄 스테이징하지 않는다.
-- `.local/antigravity/`의 인증·웹훅·스냅샷은 로컬 자료다. 토큰, 웹훅 URL, OAuth 콜백, 인증 포함 백업을 채팅·로그·커밋·릴리스에 노출하지 않는다. 테스트 결과에는 상태 코드와 비밀정보를 제거한 메타데이터만 남긴다.
+- Check `git status`, the current version, and recent commits, tags, and releases. Preserve existing uncommitted changes and commit only your own changes.
+- Local model discovery and monitoring tools may be untracked. Do not stage `scripts/`, authentication configuration, or local test tools indiscriminately.
+- Authentication, webhooks, and snapshots under `.local/antigravity/` are local data. Never expose tokens, webhook URLs, OAuth callbacks, or credential backups in chat, logs, commits, or releases. Record status codes and metadata with secrets removed.
 
-## 신모델 발견 순서
+## Discovering a new model
 
-1. 사용 중인 계정으로 `loadCodeAssist`에서 프로젝트·구독 등급을 확인하고 `fetchAvailableModels`를 조회한다. 둘 다 `.../v1internal:<method>` 형태의 엔드포인트다.
-2. 로컬에 조회 도구가 있으면 먼저 `node --import tsx scripts/antigravity-models.mjs --help`를 읽는다. 예: `node --import tsx scripts/antigravity-models.mjs list --ide-version <확인한 버전>`.
-3. 카탈로그 원본 JSON, 조회 시각, 계정 등급, 사용한 클라이언트 버전, 새 ID와 표시 이름을 기록한다. 원본은 비밀정보를 확인한 뒤 로컬에 보관한다.
-4. 카탈로그에 없더라도 미출시·지원 중단이라고 단정하지 않는다. Pro/Ultra 등 계정 등급, 순차 배포, IDE/CLI 구분, 요청 헤더 때문에 목록과 접근 가능 여부가 달라질 수 있다.
-5. 필요하면 공식 Antigravity CLI/앱의 배포 파일·번들에서 모델 ID, 표시 이름, 추론 단계 매핑을 확인한다. 출처 URL, 버전, 파일 해시와 발견 위치를 기록한다. 추측한 이름이나 커뮤니티 글만으로 ID를 확정하지 않는다.
-6. 추가 계정 로그인이 필요하면 사용자에게 로그인 화면을 넘긴다. 테스트할 수 없는 구독 등급을 테스트했다고 표현하지 않는다.
+1. Use the available account to check its project and subscription tier through `loadCodeAssist`, then query `fetchAvailableModels`. Both use the `.../v1internal:<method>` endpoint format.
+2. If the local discovery tool exists, read `node --import tsx scripts/antigravity-models.mjs --help` first. Example: `node --import tsx scripts/antigravity-models.mjs list --ide-version <verified-version>`.
+3. Record the raw catalog JSON, timestamp, account tier, client version, new IDs, and display names. Inspect the raw response for secrets before retaining it locally.
+4. Absence from the catalog does not prove that a model is unreleased or retired. Pro/Ultra access, gradual rollout, IDE versus CLI clients, and request headers can affect visibility and availability.
+5. If necessary, inspect official Antigravity CLI/app distribution files or bundles for model IDs, display names, and reasoning mappings. Record the source URL, version, file hash, and location of the evidence. Do not establish IDs from guessed names or community posts alone.
+6. Hand any additional account login to the user. Do not claim to have tested a subscription tier you cannot access.
 
-### 클라이언트 헤더도 함께 확인
+### Check client headers too
 
-- 생성 요청의 클라이언트 선택은 `src/antigravity/client.ts`에서 관리한다. 새 모델 때문에 모든 기존 모델의 헤더를 일괄 변경하지 않는다.
-- IDE 버전을 비교할 때는 해당 클라이언트가 사용하는 `User-Agent`, `X-Client-Version`, `loadCodeAssist.metadata.ide_version`을 일관되게 맞춘다. IDE와 CLI의 서로 다른 헤더 형식을 임의로 섞지 않는다.
-- 기존 사례로 Argon은 구형 IDE 클라이언트에서 404가 나고 CLI 계열 클라이언트에서는 응답했다. 이 사례의 버전 번호를 새 모델에도 정답처럼 복사하지 말고 실제 응답으로 확인한다.
-- 401은 인증 갱신, 403은 권한·접근 조건, 404는 ID·클라이언트·계정 노출 조건, 429는 할당량을 먼저 확인한다. 기본 요청부터 실패하면 파라미터 호환성 문제와 구분한다.
+- Generation client selection lives in `src/antigravity/client.ts`. Do not change headers for every existing model to accommodate one new model.
+- When comparing IDE versions, keep the client's `User-Agent`, `X-Client-Version`, and `loadCodeAssist.metadata.ide_version` consistent. Do not arbitrarily mix IDE and CLI header formats.
+- Historically, Argon returned 404 through the old IDE client but responded through a CLI client. Verify new models with live requests instead of treating those historical version numbers as universal defaults.
+- For 401, check token refresh; for 403, permissions and access conditions; for 404, the ID, client, and account visibility; for 429, quota. Distinguish a failing baseline request from a parameter compatibility failure.
 
-## 구현 위치와 유지할 구조
+## Implementation map and architecture
 
-| 대상 | 파일 / 원칙 |
+| Concern | File / rule |
 | --- | --- |
-| 모델 ID·표시 이름·추론 단계·최신/이전 분류 | `src/model/list.ts` |
-| 클라이언트별 생성 헤더 | `src/antigravity/client.ts` |
-| 저장 설정·기존 ID 변환 | `src/model/config.ts`, `src/model/index.ts` |
-| 요청 파라미터 병합·직렬화 | `src/chat/config.ts`, `src/chat/index.ts` |
-| 모델 선택·파라미터 UI | `src/ui/modal/ModelSettings.svelte` |
-| 계정·할당량 조회 및 표시 | `src/antigravity/index.ts`, `src/ui/modal/QuotaView.svelte` |
-| 고정 용도별 Risu 공급자 | `src/chat/providers.ts` |
+| Model IDs, labels, reasoning, current/older classification | `src/model/list.ts` |
+| Client headers for generation | `src/antigravity/client.ts` |
+| Saved settings and legacy ID migration | `src/model/config.ts`, `src/model/index.ts` |
+| Parameter merging and serialization | `src/chat/config.ts`, `src/chat/index.ts` |
+| Model selection and parameter UI | `src/ui/modal/ModelSettings.svelte` |
+| Account/quota requests and display | `src/antigravity/index.ts`, `src/ui/modal/QuotaView.svelte` |
+| Fixed providers for each Risu request purpose | `src/chat/providers.ts` |
 
-- 내부 모델 ID에는 추론 단계 접미사를 붙이지 않고, `reasoningIds`에 실제 요청 ID를 명시한다. 접미사 규칙을 추측하지 않는다. 고정 모델은 `requestId`를 사용한다.
-- 기존 ID·별칭·저장된 추론 단계는 변환 테스트로 보존한다. 미확인 저장 ID를 임의의 다른 모델로 바꾸지 않는다.
-- 일반 목록은 `isLatest`로 관리한다. 이전/지원 종료 예정 모델은 older models로 옮기고, 저장된 이전 모델 선택은 유지한다. 현재 분류를 새 작업에서 다시 확인한다.
-- API v3는 Chat·Memory·Emotion·Translate·Other의 고정 공급자를 등록하고 각 탭의 설정을 사용한다. 신모델은 탭의 모델 목록에 추가한다. 모델마다 Risu 공급자를 새로 등록하는 구조로 되돌리지 않는다.
-- v3의 `args.mode`로 요청 용도를 자동 판별하지 않는다. 현재 Risu는 이를 `v3`로 덮어쓴다. 카탈로그 수정·삭제 API를 확인하지 않고 재등록으로 갱신하려 하지 않는다. 중복 메타데이터가 남을 수 있다.
+- Keep reasoning suffixes out of internal model IDs. Map actual request IDs explicitly in `reasoningIds`; never infer suffix conventions. Models without selectable reasoning use `requestId`.
+- Preserve existing IDs, aliases, and saved reasoning levels through migration tests. Do not replace an unknown saved ID with another model.
+- Use `isLatest` for the default list. Move older models or models scheduled for retirement to older models while preserving saved selections. Recheck classification during each update.
+- API v3 registers fixed Chat, Memory, Emotion, Translate, and Other providers, each using its tab's settings. Add new models to the tabs' model list. Do not return to registering a separate Risu provider for every model.
+- The v3 migration was tested against RisuAI `v2026.10.295`; use that as historical evidence, not a permanent latest-version assumption. Use asynchronous v3 APIs and `nativeFetch` from the plugin's iframe. Keep quick backups in plugin-scoped arguments: `pluginStorage` was shared across plugins in that release.
+- Do not infer request purpose from v3 `args.mode`; Risu currently overwrites it with `v3`. Verify catalog update/removal APIs before attempting updates through re-registration, which can leave duplicate metadata.
 
-## 파라미터 호환성
+## Parameter compatibility
 
-- 새 모델의 기본 요청을 먼저 성공시킨 뒤, UI의 각 파라미터를 개별로 검사하고 정상 조합을 일반·스트리밍 요청에서 검사한다. 기존 모델 하나도 회귀 확인한다.
-- 값 자체를 지원하지 않아 유효한 값도 오류가 나는 필드는 **해당 모델의 UI에서 숨기고 전송에서도 제외**한다. UI와 전송은 같은 지원 정보를 사용한다.
-- 전송 필터는 저장 설정과 Risu 파라미터를 병합한 **뒤**에 적용한다. 이전 백업의 값이나 호스트가 넘겨주는 값도 차단해야 한다. 정상 지원 모델까지 일괄 제거하지 않는다.
-- 현재 Flash 3.8·Argon의 Frequency/Presence Penalty는 HTTP 400이 확인돼 `supportsPenalties: false`로 관리한다. 새로운 모델의 지원 여부는 별도로 확인한다.
-- `0`과 미지정을 구분한다. 숫자의 범위·소수·정수 크기도 확인한다. 잘못된 입력으로 생기는 오류와 모델 미지원 오류를 구분한다.
-- HTTP 200만으로 설정이 실제 효과를 냈다고 단정하지 않는다. 도구 활성화 옵션이 받아들여진 것과 도구가 실제 실행된 것도 구분한다. 미디어 해상도 효과는 텍스트만 보내는 테스트로 검증할 수 없다.
+- Establish a successful baseline first. Test each UI parameter individually, then valid combinations through normal and streaming requests. Include a regression check for an existing model.
+- If even valid values fail because a model does not support a field, **hide it in that model's UI and exclude it from requests**. Use the same capability information for UI and serialization.
+- Filter **after** merging saved settings with Risu parameters. Values from old backups and values supplied by the host must also be blocked. Preserve fields for models that support them.
+- Flash 3.8 and Argon currently use `supportsPenalties: false` after confirmed HTTP 400 responses for Frequency/Presence Penalty. Verify support independently for each new model.
+- Distinguish `0` from an unset value. Check numeric ranges, fractions, and integer limits. Separate invalid input from model incompatibility.
+- HTTP 200 does not prove that a setting took effect. Acceptance of tool options does not prove that a tool ran. Text-only requests cannot establish the effect of media resolution.
 
-## 응답·스트리밍·할당량 검증
+## Generation, streaming, and quota validation
 
-- 짧고 중립적인 확인 문자열을 요청해 실제 답변을 확인한다. HTTP 상태뿐 아니라 오류 본문, 빈 응답, 생각만 있고 최종 답변이 없는 경우도 구분한다.
-- 스트리밍은 실제 SSE 요청·청크 수신·플러그인의 스트림 파싱·Risu 화면 출력을 확인한다. `use_stream: true`를 보낸 사실만으로 성공 처리하지 않는다.
-- Node 직접 호출, 로컬 테스트 전송 경로, Risu 기본 웹 프록시, 데스크톱은 검증 범위가 다르다. 사용한 경로를 결과에 명시하고 다른 환경도 성공했다고 확대하지 않는다.
-- 실제 Risu 테스트에서는 최신 릴리스 태그를 확인하고 플러그인 설치, 고정 공급자 선택, 설정 UI·사이드바 아이콘, 응답, 새로고침 후 저장값 유지까지 확인한다.
-- 개발 인스턴스 업데이트 전 현재 설정을 보존한다. Risu의 플러그인 수동 업데이트가 인수를 초기화하거나 재로딩이 카탈로그 중복을 남기는지 확인한다. 원본 인증 포함 백업이나 호스트 디버그 로그 전체를 출력하지 않는다.
-- 할당량은 `retrieveUserQuotaSummary`의 실제 그룹·버킷·설명과 계정 등급으로 확인한다. 모델명 접두사만으로 기존 Gemini 할당량을 공유한다고 추정하지 않는다.
-- 필요하면 요청 전후의 잔여량·리셋 시각을 비교한다. 반올림·갱신 지연 때문에 변화가 안 보일 수도 있으므로 차감이 없다고 단정하지 않는다. 테스트를 위해 크레딧 초과 사용 옵션을 임의로 켜지 않는다.
-- 접근 제한으로 생성 검증을 못 했다면, ID/목록 확인과 실제 응답 검증을 분리해서 기록한다. 배포하는 경우 README·릴리스 노트에도 미검증 범위를 짧고 정확하게 남긴다.
+- Request a short, neutral marker and check the actual answer. Distinguish HTTP errors, empty responses, and thoughts without a final answer.
+- Verify actual SSE requests, received chunks, plugin stream parsing, and output in Risu. Sending `use_stream: true` alone is not a successful streaming test.
+- Direct Node requests, local test transports, Risu's default web proxy, and desktop transport cover different environments. State which path was tested; do not extend success claims to other paths.
+- For live Risu tests, identify the latest release tag and verify installation, selection of fixed providers, settings UI and sidebar icon, generation, and persistence after reload.
+- Preserve current settings before updating a dev instance. Check whether manual plugin updates reset arguments or reloads duplicate catalog entries. Never dump credential backups or complete host debug logs.
+- Determine quota behavior from the actual `retrieveUserQuotaSummary` groups, buckets, descriptions, and account tier. Do not infer a shared Gemini quota from a model-name prefix.
+- Compare remaining quota and reset times before and after requests when needed. Rounding or delayed updates can hide usage; no visible change does not prove zero consumption. Do not enable credit overage for testing without user authorization.
+- If access restrictions prevent generation tests, record ID/catalog confirmation separately from live generation. When releasing, state the unverified scope briefly and accurately in the README and release notes.
 
-## 변경 후 검사와 배포
+## Checks and release
 
 ```sh
 npm test
@@ -70,14 +71,14 @@ npm test
 npm run build
 ```
 
-- 모델 ID·추론 매핑·이전 설정 호환성, 지원하지 않는 값의 저장/호스트 경로 차단, older models 표시를 필요한 회귀 테스트에 포함한다.
-- `dist/risu-antigravity.js`의 맨 앞에서 `//@name`, `//@api 3.0`, `//@version`과 버전을 확인한다. 릴리스 파일은 커밋한 소스만으로 재현 가능해야 한다. 로컬 전용 변경이 있는 작업 트리의 빌드를 그대로 배포하지 않는다.
-- 버전을 바꿀 때 `package.json`, `package-lock.json`, `src/plugin.ts`를 맞춘다. README는 간결하게, 릴리스 노트는 기존 형식을 따른다. 사용자가 요청한 버전·배포 범위로 진행한다.
-- API 2.1 코드는 `legacy-api-2.1` 브랜치와 기존 v1.5.2 태그·릴리스로 보존한다. 기존 배포 파일을 새 v3 파일로 덮어쓰지 않는다.
+- Add relevant regressions for IDs, reasoning mappings, saved settings, filtering of unsupported fields from saved/host values, and visibility of older models.
+- Check `//@name`, `//@api 3.0`, and `//@version` at the start of `dist/risu-antigravity.js`. Release artifacts must be reproducible from committed source. Do not distribute a build containing changes intended only for local use.
+- Keep `package.json`, `package-lock.json`, and `src/plugin.ts` aligned when changing versions. Keep the README concise and follow the existing release note format. Use the version and release scope requested by the user.
+- Preserve API 2.1 on `legacy-api-2.1` and in the existing v1.5.2 tag/release. Do not overwrite legacy release assets with v3 builds.
 
-## GitHub·커밋 계정
+## GitHub and commit identity
 
-- 이 개인 저장소의 계정은 **`kangjoseph90`**, 커밋 작성자·커미터는 **`Joseph Kang <kangjoseph90@gmail.com>`**이다. 회사 계정을 사용하지 않는다.
-- 커밋 전 로컬 Git identity를, 원격 쓰기 전 실제 인증된 GitHub login을 확인한다. 컴퓨터의 기본 활성 계정이 개인 계정이라고 가정하지 않는다.
-- 개인 계정 토큰을 해당 프로세스의 `GH_TOKEN`으로만 전달하고 Git push의 credential helper도 그 인증을 사용하게 한다. 토큰을 출력·파일 저장하지 않고, `gh auth switch`로 전역 활성 계정을 바꾸지 않는다.
-- 완료 보고에는 확인한 출처·계정 등급·클라이언트 버전·테스트 범위·실패/미검증 항목·커밋/배포 결과를 구분해서 적는다.
+- This personal repository uses **`kangjoseph90`**. Both author and committer must be **`Joseph Kang <kangjoseph90@gmail.com>`**. Do not use the company account.
+- Verify local Git identity before committing and the authenticated GitHub login before remote writes. Do not assume the machine's active account is the personal account.
+- Pass the personal token only through the process's `GH_TOKEN`, and make Git push use that authentication through its credential helper. Never print or persist the token. Do not change the global active account with `gh auth switch`.
+- In completion reports, distinguish sources, account tier, client version, test coverage, failures/unverified cases, and commit/release results.

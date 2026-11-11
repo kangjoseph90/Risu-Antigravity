@@ -35,13 +35,11 @@ You are responsible for complying with the applicable terms of service and usage
 
 ---
 
-## API v3 migration (2.0.0 beta)
+## API v3 beta
 
-Requires a RisuAI release with Plugin API 3.0; development is verified against `v2026.10.295`. Open **Settings → Antigravity** for the original Chat, Memory, Emotion, Translate, and Other tabs. Each tab selects its own model, reasoning, parameters, and streaming. In RisuAI, select `[Antigravity] Chat` for your main model and the corresponding fixed entry wherever RisuAI offers a separate model selector for that purpose. Requests use the tab associated with the selected entry; v3 does not automatically identify the request purpose. Tab changes apply to the next request without changing the catalog entry or reloading the page.
+Requires RisuAI with Plugin API 3.0. Configure each request type in **Settings → Antigravity**, then select the matching `[Antigravity] …` entry in RisuAI’s model settings.
 
-API 2.1 is preserved on [`legacy-api-2.1`](https://github.com/kangjoseph90/Risu-Antigravity/tree/legacy-api-2.1), with the existing [v1.5.2 release](https://github.com/kangjoseph90/Risu-Antigravity/releases/tag/v1.5.2). Before installing a plugin update, export a file backup. To migrate, export a backup from v1.5.2, install the v3 plugin, and import the backup (file import or **Paste Backup JSON**). Existing request-type profiles are restored independently. Backups from the earlier model-based beta recover their retained legacy request profiles and preserve the model profiles in `previousModelConfigs`; if no legacy profiles exist, only the former default Flash profile is assigned to Chat. Re-select RisuAI’s main and auxiliary model entries after upgrading, then reload the page once to clear older catalog entries.
-
-The v3 plugin runs inside RisuAI’s sandbox. Network requests use `nativeFetch`; quick backups use plugin-scoped arguments rather than the host’s shared plugin storage. Streaming depends on the selected RisuAI network transport and upstream availability. The public web proxy and desktop/local transports can behave differently.
+Export a file backup before upgrading and import it after installation. The API 2.1 version remains available on [`legacy-api-2.1`](https://github.com/kangjoseph90/Risu-Antigravity/tree/legacy-api-2.1) and in the [v1.5.2 release](https://github.com/kangjoseph90/Risu-Antigravity/releases/tag/v1.5.2).
 
 ## Installation & Build
 
