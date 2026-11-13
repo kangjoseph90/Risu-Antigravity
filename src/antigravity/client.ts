@@ -9,5 +9,7 @@ export function getGenerationUserAgent(model: unknown): string {
         && /^gemini-4-argon(?:-(?:low|medium|high))?$/.test(model);
     const isHydrogen = typeof model === 'string'
         && /^gemini-4-hydrogen(?:-(?:low|medium|high|xhigh))?$/.test(model);
-    return isHydrogen ? CLI_USER_AGENT : isArgon ? ARGON_USER_AGENT : LEGACY_IDE_USER_AGENT;
+    const isCarbon = typeof model === 'string'
+        && /^gemini-4-carbon(?:-(?:low|medium|high))?$/.test(model);
+    return (isHydrogen || isCarbon) ? CLI_USER_AGENT : isArgon ? ARGON_USER_AGENT : LEGACY_IDE_USER_AGENT;
 }

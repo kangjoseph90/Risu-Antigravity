@@ -160,3 +160,38 @@ test('fixed providers route v3 requests to independent tabs and read changed set
     assert.equal(providers.size, 5);
     await ModelManager.flush();
 });
+
+test('Carbon levels persist and inaccessible normal/SSE requests return the upstream error', async () => {
+    const values = new Map<string, unknown>([
+        ['is_logged_in', 1], ['access_token', 'test-only'], ['access_token_expires', '2030-01-01T00:00:00Z'],
+        ['project_id', 'test-project'], ['service_tier', 'paid-tier'], ['opt_out', 1],
+    ]);
+    const providers = new Map<string, Function>();
+    let sent: any;
+    host.risuai = {
+        getArgument: async (key: string) => values.get(key),
+        setArgument: async (key: string, value: unknown) => { values.set(key, value); },
+        addProvider: async (name: string, callback: Function) => { providers.set(name, callback); },
+        nativeFetch: async (_url: string, args: any) => {
+            sent = {body:JSON.parse(args.body),headers:args.headers};
+            return Response.json({error:{status:'NOT_FOUND',message:'Requested entity was not found.'}}, {status:404});
+        },
+    };
+    await ModelManager.init();
+    await registerProviders();
+    for (const level of ['low','medium','high'] as const) {
+        for (const use_stream of [false,true]) {
+            ModelManager.setConfig(RequestType.Chat, {model_id:'gemini-4-carbon',reasoning_level:level,parameters:{use_stream}});
+            await ModelManager.flush();
+            await ModelManager.init();
+            assert.equal(ModelManager.getConfig(RequestType.Chat).reasoning_level,level);
+            const result = await providers.get('[Antigravity] Chat')!({mode:'v3',prompt_chat:[{role:'user',content:'Test'}],max_tokens:64,frequency_penalty:0.5,presence_penalty:0.5});
+            assert.equal(result.success,false);
+            assert.match(result.content,/404.*Requested entity was not found/);
+            assert.equal(sent.body.model,`gemini-4-carbon-${level}`);
+            assert.match(sent.headers['User-Agent'],/^antigravity\/cli\/1\.5\.8 /);
+            assert.equal('frequencyPenalty' in sent.body.request.generationConfig,false);
+            assert.equal('presencePenalty' in sent.body.request.generationConfig,false);
+        }
+    }
+});
