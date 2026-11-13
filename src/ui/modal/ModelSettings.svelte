@@ -99,6 +99,9 @@
                 <option value={model.id}>{model.displayName}</option>
             {/each}
         </select>
+        {#if currentModelId === 'gemini-4-carbon'}
+            <p class="text-xs text-zinc-400">Requires Google AI Ultra or Enterprise.</p>
+        {/if}
         {#if !showOlderModels && selectedOlderModel}
             <p class="text-xs text-zinc-400">
                 Your saved older model is kept selected. Enable "Show older models" to see all models.

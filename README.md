@@ -24,8 +24,11 @@ You are responsible for complying with the applicable terms of service and usage
 ### Model Management
 
 -   **Model Selection**: Choose from available Antigravity models.
+-   **Gemini 4 Carbon**: Low, Medium, and High reasoning.
 -   **Gemini 4 Hydrogen**: Low, Medium, High, and XHigh reasoning.
 -   **Configuration**: Customize model parameters to suit your needs.
+
+Carbon generation and streaming could not be verified with my Google AI Pro account.
 
 ### User Interface
 
