@@ -24,7 +24,7 @@ You are responsible for complying with the applicable terms of service and usage
 ### Model Management
 
 -   **Model Selection**: Choose a model, reasoning level, parameters, and streaming separately in each request-type tab.
--   **Gemini 4 Hydrogen**: Low, Medium, High, and Extra (XHigh) reasoning.
+-   **Gemini 4 Hydrogen**: Low, Medium, High, and XHigh reasoning.
 -   **Configuration**: Customize model parameters to suit your needs.
 
 ### User Interface
