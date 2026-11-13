@@ -27,7 +27,7 @@ interface RisuArgs {
 
 // Plugin Info
 const PLUGIN_TITLE = 'risu-antigravity'
-const PLUGIN_VERSION = 'v2.0.0-beta.1'
+const PLUGIN_VERSION = 'v2.0.0'
 const PLUGIN_NAME = PLUGIN_TITLE
 
 // Argument Name Definitions

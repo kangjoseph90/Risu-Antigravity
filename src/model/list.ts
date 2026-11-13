@@ -5,6 +5,7 @@ export type Model = {
   displayName: string;
   isLatest?: boolean;
   supportsPenalties?: boolean;
+  defaultReasoningLevel?: ReasoningLevel;
 } & (
   | { reasoningIds: Partial<Record<ReasoningLevel, string>>; requestId?: never }
   | { requestId: string; reasoningIds?: never }
@@ -16,9 +17,18 @@ export interface ModelSelection {
 }
 
 export const DEFAULT_MODEL_ID = 'gemini-3.8-flash';
-export const REASONING_LEVELS: ReasoningLevel[] = ['low', 'medium', 'high'];
+export const REASONING_LEVELS: ReasoningLevel[] = ['low', 'medium', 'high', 'xhigh'];
 
 export const MODELS: Model[] = [
+  // IDs confirmed by fetchAvailableModels with the official CLI 1.5.8 client.
+  {
+    id: 'gemini-4-hydrogen', displayName: 'Gemini 4 Hydrogen', isLatest: true,
+    supportsPenalties: false, defaultReasoningLevel: 'high',
+    reasoningIds: {
+      low: 'gemini-4-hydrogen-low', medium: 'gemini-4-hydrogen-medium',
+      high: 'gemini-4-hydrogen-high', xhigh: 'gemini-4-hydrogen-xhigh',
+    },
+  },
   // IDs and labels confirmed in the official Antigravity CLI 1.3.5 binary.
   {
     id: 'gemini-4-argon', displayName: 'Gemini 4 Argon', isLatest: true, supportsPenalties: false,
@@ -87,7 +97,7 @@ export function normalizeModelSelection(modelId: string, reasoningLevel?: Reason
   const preferredLevel = reasoningLevel ?? savedLevel;
   const selectedLevel = preferredLevel && levels.includes(preferredLevel)
     ? preferredLevel
-    : levels[levels.length - 1];
+    : model.defaultReasoningLevel ?? levels[levels.length - 1];
   return { model_id: model.id, ...(selectedLevel ? { reasoning_level: selectedLevel } : {}) };
 }
 

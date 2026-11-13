@@ -24,7 +24,7 @@ You are responsible for complying with the applicable terms of service and usage
 ### Model Management
 
 -   **Model Selection**: Choose a model, reasoning level, parameters, and streaming separately in each request-type tab.
--   **Gemini 4 Argon**: Low, Medium, and High reasoning.
+-   **Gemini 4 Hydrogen**: Low, Medium, High, and Extra (XHigh) reasoning.
 -   **Configuration**: Customize model parameters to suit your needs.
 
 ### User Interface
@@ -34,11 +34,11 @@ You are responsible for complying with the applicable terms of service and usage
 
 ---
 
-## API v3 beta
+## Plugin API v3
 
 Requires RisuAI with Plugin API 3.0. Configure each request type in **Settings → Antigravity**, then select the matching `[Antigravity] …` entry in RisuAI’s model settings.
 
-Export a file backup before upgrading and import it after installation. The API 2.1 version remains available on [`legacy-api-2.1`](https://github.com/kangjoseph90/Risu-Antigravity/tree/legacy-api-2.1) and in the [v1.5.2 release](https://github.com/kangjoseph90/Risu-Antigravity/releases/tag/v1.5.2).
+Export a file backup before upgrading and import it after installation. API v3 and legacy API 2.1 builds are maintained together and included in each release.
 
 ## Installation & Build
 
