@@ -24,7 +24,7 @@ You are responsible for complying with the applicable terms of service and usage
 ### Model Management
 
 -   **Model Selection**: Choose from available Antigravity models.
--   **Gemini 4 Hydrogen**: Low, Medium, High, and Extra (XHigh) reasoning.
+-   **Gemini 4 Hydrogen**: Low, Medium, High, and XHigh reasoning.
 -   **Configuration**: Customize model parameters to suit your needs.
 
 ### User Interface

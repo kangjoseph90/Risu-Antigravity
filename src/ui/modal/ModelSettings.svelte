@@ -116,7 +116,7 @@
                     class="w-full px-4 py-2.5 bg-[#252528] border border-zinc-700 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-colors"
                 >
                     {#each reasoningLevels as level}
-                        <option value={level}>{level === 'low' ? 'Low' : level === 'medium' ? 'Medium' : level === 'xhigh' ? 'Extra (XHigh)' : 'High'}</option>
+                        <option value={level}>{level === 'low' ? 'Low' : level === 'medium' ? 'Medium' : level === 'xhigh' ? 'XHigh' : 'High'}</option>
                     {/each}
                 </select>
             </div>
