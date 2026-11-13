@@ -9,8 +9,11 @@ export function risuPluginHeader(): Plugin {
   return {
     name: 'vite-plugin-risu-header',
     apply: 'build',
+    enforce: 'post',
     
-    generateBundle(options, bundle) {
+    generateBundle: {
+      order: 'post',
+      handler(options, bundle) {
       // 번들된 JS 파일 찾기
       const jsFile = Object.keys(bundle).find(fileName => fileName.endsWith('.js'));
       
@@ -28,6 +31,7 @@ export function risuPluginHeader(): Plugin {
       
       // 기존 코드 앞에 헤더 추가
       chunk.code = header + '\n' + chunk.code;
+      }
     }
   };
 }
@@ -52,6 +56,7 @@ function generateRisuHeader(pluginConfig: string): string {
   lines.push(`//@display-name ${title}`);
   
   lines.push('//@api 2.1');
+  lines.push(`//@version ${version.replace(/^v/, '')}`);
 
   // RISU_ARGS에서 인자 추출
   const argsMatch = pluginConfig.match(/const\s+RISU_ARGS[^{]*\{([\s\S]*?)\}/);
