@@ -1,5 +1,6 @@
 import type { PluginV2ProviderArgument } from "../api";
 import type { ModelParameters, PluginParameters } from "../shared/types";
+import { supportsPenaltyParameters } from "../model/list";
 
 
 export function getPluginParams(args: PluginV2ProviderArgument): PluginParameters {
@@ -25,16 +26,17 @@ export function applyPluginParams(params: ModelParameters, pluginParams: PluginP
     return newParams;
 }
 
-export function getGenerationConfig(params: ModelParameters): any {
+export function getGenerationConfig(params: ModelParameters, modelId?: string): any {
     const generationConfig: any = {};
 
-    if (params.frequency_penalty) generationConfig.frequencyPenalty = params.frequency_penalty;
-    if (params.presence_penalty) generationConfig.presencePenalty = params.presence_penalty;
-    if (params.repetition_penalty) generationConfig.repetitionPenalty = params.repetition_penalty;
-    if (params.min_p) generationConfig.minP = params.min_p;
+    // Filter after merging saved settings and host parameters, including old backups.
+    if (!modelId || supportsPenaltyParameters(modelId)) {
+        if (params.frequency_penalty) generationConfig.frequencyPenalty = params.frequency_penalty;
+        if (params.presence_penalty) generationConfig.presencePenalty = params.presence_penalty;
+    }
     if (params.top_k) generationConfig.topK = params.top_k;
     if (params.top_p) generationConfig.topP = params.top_p;
-    if (params.temperature) generationConfig.temperature = params.temperature;
+    if (params.temperature !== undefined) generationConfig.temperature = params.temperature;
     if (params.max_tokens) generationConfig.maxOutputTokens = params.max_tokens;
     if (params.seed !== undefined) generationConfig.seed = params.seed;
 

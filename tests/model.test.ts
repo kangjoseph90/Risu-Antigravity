@@ -6,7 +6,7 @@ import { getGenerationConfig } from '../src/chat/config';
 
 test('latest model list contains Argon and existing families without reasoning suffixes', () => {
   assert.deepEqual(getVisibleModels(false, '').map((model) => model.id), [
-    'gemini-4-argon', 'gemini-3.8-flash', 'gemini-3.1-pro', 'claude-opus-5-5', 'claude-sonnet-5-5',
+    'gemini-4-hydrogen', 'gemini-4-argon', 'gemini-3.8-flash', 'claude-opus-5-5', 'claude-sonnet-5-5',
   ]);
   assert.equal(getVisibleModels(true, '').length, MODELS.length);
 });
@@ -34,6 +34,7 @@ test('older Flash aliases use their original level mapping', () => {
 
 test('migration preserves every old request ID and its encoded level', () => {
   const oldIds = [
+    'gemini-4-hydrogen-low', 'gemini-4-hydrogen-medium', 'gemini-4-hydrogen-high', 'gemini-4-hydrogen-xhigh',
     'gemini-4-argon-high', 'gemini-4-argon-medium', 'gemini-4-argon-low',
     'gemini-3.8-flash-high', 'gemini-3.8-flash-medium', 'gemini-3.8-flash-low',
     'gemini-3.7-flash-high', 'gemini-3.7-flash-medium', 'gemini-3.7-flash-low',
@@ -70,7 +71,50 @@ test('legacy reasoning overrides are removed without losing other parameters', (
 
 test('filtered lists preserve saved legacy and unknown IDs', () => {
   assert.equal(getVisibleModels(false, 'gemini-3.7-flash').length, 6);
+  for (const id of ['gemini-3.1-pro', 'gpt-oss-120b']) {
+    assert.ok(!getVisibleModels(false, '').some(model => model.id === id));
+    assert.ok(getVisibleModels(true, '').some(model => model.id === id));
+    assert.ok(getVisibleModels(false, id).some(model => model.id === id));
+  }
   assert.equal(getVisibleModels(false, 'future-model').at(-1)?.id, 'future-model');
   assert.deepEqual(normalizeModelSelection('future-model', 'high'), { model_id: 'future-model' });
   assert.equal(getRequestModelId('future-model'), 'future-model');
+});
+
+test('unsupported penalties are removed for every Argon and Flash 3.8 request ID, while supported models retain them', () => {
+  const params = { frequency_penalty: 0.5, presence_penalty: 0.6, temperature: 0.7 };
+  for (const id of ['gemini-4-hydrogen', 'gemini-4-argon', 'gemini-3.8-flash']) {
+    for (const requestId of [id, ...getReasoningLevels(id).map(level => getRequestModelId(id, level))]) {
+      const generation = getGenerationConfig(params, requestId);
+      assert.equal('frequencyPenalty' in generation, false);
+      assert.equal('presencePenalty' in generation, false);
+      assert.equal(generation.temperature, 0.7);
+    }
+  }
+  for (const id of ['claude-opus-5-5-low', 'claude-sonnet-5-5-low', 'gpt-oss-120b-medium']) {
+    const generation = getGenerationConfig(params, id);
+    assert.equal(generation.frequencyPenalty, 0.5);
+    assert.equal(generation.presencePenalty, 0.6);
+  }
+});
+
+
+test('host defaults do not send unsupported Antigravity sampling fields; zero temperature is preserved', () => {
+  const generation = getGenerationConfig({ repetition_penalty: 1, min_p: 0.1, temperature: 0, max_tokens: 256 });
+  assert.equal(generation.temperature, 0);
+  assert.equal(generation.maxOutputTokens, 256);
+  assert.equal('repetitionPenalty' in generation, false);
+  assert.equal('minP' in generation, false);
+});
+
+test('Hydrogen exposes four explicit IDs, defaults to High, and preserves Extra settings', () => {
+  assert.deepEqual(getReasoningLevels('gemini-4-hydrogen'), ['low', 'medium', 'high', 'xhigh']);
+  assert.equal(getRequestModelId('gemini-4-hydrogen'), 'gemini-4-hydrogen-high');
+  for (const level of getReasoningLevels('gemini-4-hydrogen')) {
+    const id = getRequestModelId('gemini-4-hydrogen', level);
+    assert.equal(id, `gemini-4-hydrogen-${level}`);
+    assert.deepEqual(normalizeModelConfig({model_id:id,parameters:{use_stream:true}}), {
+      model_id:'gemini-4-hydrogen', reasoning_level:level, parameters:{use_stream:true},
+    });
+  }
 });

@@ -24,7 +24,7 @@ You are responsible for complying with the applicable terms of service and usage
 ### Model Management
 
 -   **Model Selection**: Choose from available Antigravity models.
--   **Gemini 4 Argon**: Low, Medium, and High reasoning.
+-   **Gemini 4 Hydrogen**: Low, Medium, High, and Extra (XHigh) reasoning.
 -   **Configuration**: Customize model parameters to suit your needs.
 
 ### User Interface
@@ -33,6 +33,8 @@ You are responsible for complying with the applicable terms of service and usage
 -   **Status Indicators**: Visual indicators for login status and service tier.
 
 ---
+
+API v3 and legacy API 2.1 builds are maintained together and included in each release.
 
 ## Installation & Build
 

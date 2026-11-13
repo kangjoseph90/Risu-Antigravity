@@ -18,7 +18,7 @@ export interface PluginParameters {
     max_tokens?: number
 }
 
-export type ReasoningLevel = 'low' | 'medium' | 'high';
+export type ReasoningLevel = 'low' | 'medium' | 'high' | 'xhigh';
 
 export interface ModelParameters extends PluginParameters {
     media_resolution?: 'media_resolution_low' | 'media_resolution_medium' | 'media_resolution_high'
