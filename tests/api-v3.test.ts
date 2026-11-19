@@ -195,3 +195,45 @@ test('Carbon levels persist and inaccessible normal/SSE requests return the upst
         }
     }
 });
+
+test('Neon routes all four persisted levels through normal/SSE with saved and host penalties filtered', async () => {
+    const values = new Map<string, unknown>([
+        ['is_logged_in',1],['access_token','test-only'],['access_token_expires','2030-01-01T00:00:00Z'],
+        ['project_id','test-project'],['service_tier','paid-tier'],['opt_out',1],
+    ]);
+    const providers = new Map<string,Function>();
+    const envelope = {response:{candidates:[{content:{parts:[{text:'NEON_ROUTED_OK'}]}}]}};
+    let sent: any;
+    host.risuai = {
+        getArgument:async(key:string)=>values.get(key),
+        setArgument:async(key:string,value:unknown)=>{values.set(key,value);},
+        addProvider:async(name:string,callback:Function)=>{providers.set(name,callback);},
+        nativeFetch:async(url:string,args:any)=>{
+            sent={url,body:JSON.parse(args.body),headers:args.headers};
+            return url.includes('streamGenerateContent')
+                ? new Response('data: '+JSON.stringify(envelope)+'\n\n',{headers:{'Content-Type':'text/event-stream'}})
+                : Response.json(envelope);
+        },
+    };
+    await ModelManager.init();
+    await registerProviders();
+    for (const level of ['low','medium','high','xhigh'] as const) {
+        for (const use_stream of [false,true]) {
+            ModelManager.setConfig(RequestType.Chat,{model_id:'gemini-4-neon',reasoning_level:level,parameters:{use_stream,temperature:0,frequency_penalty:0.7}});
+            await ModelManager.flush();await ModelManager.init();
+            assert.equal(ModelManager.getConfig(RequestType.Chat).reasoning_level,level);
+            const result=await providers.get('[Antigravity] Chat')!({mode:'v3',prompt_chat:[{role:'user',content:'Test'}],max_tokens:64,frequency_penalty:0.5,presence_penalty:0.5});
+            assert.equal(result.success,true);
+            let content='';
+            if(typeof result.content==='string')content=result.content;
+            else{const reader=result.content.getReader();while(true){const item=await reader.read();if(item.done)break;content+=item.value;}}
+            assert.equal(content,'NEON_ROUTED_OK');
+            assert.equal(sent.body.model,`gemini-4-neon-${level}`);
+            assert.equal(sent.url.includes('streamGenerateContent'),use_stream);
+            assert.match(sent.headers['User-Agent'],/^antigravity\/cli\/1\.5\.12 /);
+            assert.equal(sent.body.request.generationConfig.temperature,0);
+            assert.equal('frequencyPenalty' in sent.body.request.generationConfig,false);
+            assert.equal('presencePenalty' in sent.body.request.generationConfig,false);
+        }
+    }
+});
