@@ -20,6 +20,15 @@ export const DEFAULT_MODEL_ID = 'gemini-3.8-flash';
 export const REASONING_LEVELS: ReasoningLevel[] = ['low', 'medium', 'high', 'xhigh'];
 
 export const MODELS: Model[] = [
+  // IDs and labels confirmed by fetchAvailableModels with CLI 1.5.12.
+  {
+    id: 'gemini-4-neon', displayName: 'Gemini 4 Neon', isLatest: true,
+    supportsPenalties: false, defaultReasoningLevel: 'high',
+    reasoningIds: {
+      low: 'gemini-4-neon-low', medium: 'gemini-4-neon-medium',
+      high: 'gemini-4-neon-high', xhigh: 'gemini-4-neon-xhigh',
+    },
+  },
   // Exact request IDs confirmed in the official Antigravity CLI 1.5.8 binary.
   {
     id: 'gemini-4-carbon', displayName: 'Gemini 4 Carbon', isLatest: true,

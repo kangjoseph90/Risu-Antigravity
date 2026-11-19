@@ -10,7 +10,7 @@ test('every selectable Argon reasoning level uses a CLI client for generation', 
 });
 
 test('other selectable models retain their existing IDE client', () => {
-    for (const model of MODELS.filter(model => !['gemini-4-argon', 'gemini-4-hydrogen', 'gemini-4-carbon'].includes(model.id))) {
+    for (const model of MODELS.filter(model => !['gemini-4-argon', 'gemini-4-hydrogen', 'gemini-4-carbon', 'gemini-4-neon'].includes(model.id))) {
         const levels = getReasoningLevels(model.id);
         for (const level of levels.length ? levels : [undefined]) {
             assert.match(getGenerationUserAgent(getRequestModelId(model.id, level)), /^antigravity\/ide\/2\.5\.5 /);
@@ -19,7 +19,7 @@ test('other selectable models retain their existing IDE client', () => {
 });
 
 test('unrecognized or missing model IDs do not select Argon transport', () => {
-    for (const model of [undefined, null, {}, 'future-model', 'gemini-4-argon-low-extra', 'gemini-4-hydrogen-xhigh-extra', 'gemini-4-carbon-disabled', 'gemini-4-carbon-xhigh']) {
+    for (const model of [undefined, null, {}, 'future-model', 'gemini-4-argon-low-extra', 'gemini-4-hydrogen-xhigh-extra', 'gemini-4-carbon-disabled', 'gemini-4-carbon-xhigh', 'gemini-4-neon-xhigh-extra', 'gemini-pro-orchestrator-neon']) {
         assert.match(getGenerationUserAgent(model), /^antigravity\/ide\//);
     }
 });
@@ -33,5 +33,11 @@ test('all Hydrogen levels use the verified CLI 1.5.8 client', () => {
 test('all confirmed Carbon IDs use the official CLI 1.5.8 client', () => {
     for (const level of getReasoningLevels('gemini-4-carbon')) {
         assert.match(getGenerationUserAgent(getRequestModelId('gemini-4-carbon', level)), /^antigravity\/cli\/1\.5\.8 /);
+    }
+});
+
+test('all standalone Neon levels use CLI 1.5.12 without changing other model clients', () => {
+    for (const level of getReasoningLevels('gemini-4-neon')) {
+        assert.match(getGenerationUserAgent(getRequestModelId('gemini-4-neon', level)), /^antigravity\/cli\/1\.5\.12 /);
     }
 });
