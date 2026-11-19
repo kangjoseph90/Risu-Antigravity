@@ -73,7 +73,7 @@ npm run build
 
 - Add relevant regressions for IDs, reasoning mappings, saved settings, filtering of unsupported fields from saved/host values, and visibility of older models.
 - Check `//@name`, `//@api 3.0`, and `//@version` at the start of `dist/risu-antigravity.js`. Release artifacts must be reproducible from committed source. Do not distribute a build containing changes intended only for local use.
-- Keep `package.json`, `package-lock.json`, and `src/plugin.ts` aligned when changing versions. Keep the README concise and follow the existing release note format. Use the version and release scope requested by the user.
+- Keep `package.json`, `package-lock.json`, and `src/plugin.ts` aligned when changing versions. Keep the README focused on setup and general features; individual model additions and reasoning-level lists belong in release notes. Follow the existing release note format and use the version and release scope requested by the user.
 - Preserve API 2.1 on `legacy-api-2.1` and in the existing v1.5.2 tag/release. Do not overwrite legacy release assets with v3 builds.
 
 ## GitHub and commit identity
