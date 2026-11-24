@@ -4,9 +4,9 @@ import { MODELS, getReasoningLevels, getRequestModelId, getVisibleModels, normal
 import { normalizeModelConfig } from '../src/model/config';
 import { getGenerationConfig } from '../src/chat/config';
 
-test('latest model list contains Argon and existing families without reasoning suffixes', () => {
+test('latest model list contains current families without reasoning suffixes', () => {
   assert.deepEqual(getVisibleModels(false, '').map((model) => model.id), [
-    'gemini-4-neon', 'gemini-4-carbon', 'gemini-4-hydrogen', 'gemini-4-argon', 'gemini-3.8-flash', 'claude-opus-5-5', 'claude-sonnet-5-5',
+    'gemini-4-neon', 'gemini-4-carbon', 'gemini-4-hydrogen', 'gemini-3.8-flash', 'claude-opus-5-5', 'claude-sonnet-5-5',
   ]);
   assert.equal(getVisibleModels(true, '').length, MODELS.length);
 });
@@ -72,8 +72,8 @@ test('legacy reasoning overrides are removed without losing other parameters', (
 });
 
 test('filtered lists preserve saved legacy and unknown IDs', () => {
-  assert.equal(getVisibleModels(false, 'gemini-3.7-flash').length, 8);
-  for (const id of ['gemini-3.1-pro', 'gpt-oss-120b']) {
+  assert.equal(getVisibleModels(false, 'gemini-3.7-flash').length, 7);
+  for (const id of ['gemini-4-argon', 'gemini-3.1-pro', 'gpt-oss-120b']) {
     assert.ok(!getVisibleModels(false, '').some(model => model.id === id));
     assert.ok(getVisibleModels(true, '').some(model => model.id === id));
     assert.ok(getVisibleModels(false, id).some(model => model.id === id));

@@ -26,8 +26,6 @@ You are responsible for complying with the applicable terms of service and usage
 -   **Model Selection**: Choose a model, reasoning level, parameters, and streaming separately in each request-type tab.
 -   **Configuration**: Customize model parameters to suit your needs.
 
-Carbon generation and streaming could not be verified with my Google AI Pro account.
-
 ### User Interface
 
 -   **Easy Setup**: Simple UI for logging in and configuring the provider.
